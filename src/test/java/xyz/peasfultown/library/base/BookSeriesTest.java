@@ -1,4 +1,4 @@
-package xyz.peasfultown.library;
+package xyz.peasfultown.library.base;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.peasfultown.library.base.Book;
-import xyz.peasfultown.library.base.BookSeries;
 
 public class BookSeriesTest {
     private static final Logger logger = LoggerFactory.getLogger(BookSeriesTest.class);

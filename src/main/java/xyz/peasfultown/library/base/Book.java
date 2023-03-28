@@ -1,18 +1,17 @@
 package xyz.peasfultown.library.base;
 
 import java.util.Calendar;
+import java.util.Date;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Book {
-    public static final String CALENDAR_TYPE = "iso8601";
-
     private String ISBN;
     private String title;
     private Author[] authors;
-    private Calendar datePublished;
+    private Date publishDate;
     private Publisher publisher;
 
     private BookSeries series;
@@ -22,25 +21,25 @@ public class Book {
         this.title = title;
         this.ISBN = null;
         this.authors = null;
-        this.datePublished = null;
+        this.publishDate = null;
     }
 
-    public Book(String ISBN, String title, Author author, Calendar datePublished) {
+    public Book(String ISBN, String title, Author author, Date publishDate) {
         this(title);
         this.ISBN = ISBN;
-        this.authors = new Author[] { author };
-        this.datePublished = datePublished;
+        this.authors = new Author[]{author};
+        this.publishDate = publishDate;
     }
 
-    public Book(String ISBN, String title, Author[] authors, Calendar datePublished) {
+    public Book(String ISBN, String title, Author[] authors, Date publishDate) {
         this(title);
         this.ISBN = ISBN;
         this.authors = authors;
-        this.datePublished = datePublished;
+        this.publishDate = publishDate;
     }
 
-    public Book(String ISBN, String title, Author[] authors, Calendar datePublished, Publisher publisher) {
-        this(ISBN, title, authors, datePublished);
+    public Book(String ISBN, String title, Author[] authors, Date publishDate, Publisher publisher) {
+        this(ISBN, title, authors, publishDate);
         this.publisher = publisher;
     }
 
@@ -86,38 +85,15 @@ public class Book {
     }
 
     public void setAuthors(Author author) {
-        this.authors = new Author[]{ author };
+        this.authors = new Author[]{author};
     }
 
-    public Calendar getDatePublished() {
-        return datePublished;
+    public Date getPublishDate() {
+        return publishDate;
     }
 
-    public String getDatePublishedAsString() {
-        StringBuilder sb = new StringBuilder();
-        Calendar datePublished = this.datePublished;
-
-        int day = datePublished.get(Calendar.DAY_OF_MONTH);
-        int month = datePublished.get(Calendar.MONTH);
-        int year = datePublished.get(Calendar.YEAR);
-
-        if (day < 10) {
-            sb.append(0);
-        }
-        sb.append(day);
-        sb.append('/');
-        if (month < 10) {
-            sb.append(0);
-        }
-        sb.append(this.datePublished.get(Calendar.MONTH));
-        sb.append('/');
-        sb.append(this.datePublished.get(Calendar.YEAR));
-
-        return sb.toString();
-    }
-
-    public void setDatePublished(Calendar datePublished) {
-        this.datePublished = datePublished;
+    public void setPublishDate(Date publishDate) {
+        this.publishDate = publishDate;
     }
 
     public void setPublisher(Publisher publisher) {
@@ -144,8 +120,11 @@ public class Book {
         return this.numberInSeries;
     }
 
-    // Static methods
-    public static Calendar getCalendarFromString(String strOfDate) {
+    // ============ Static methods ============
+
+    public static Date getDateFromString(String strOfDate) {
+        Calendar.Builder cb = new Calendar.Builder().setLenient(true);
+
         if (strOfDate == null) {
             return null;
         }
@@ -155,16 +134,19 @@ public class Book {
             return null;
         }
 
-        Calendar c;
+        Date d;
         try {
-            c = new Calendar.Builder().setCalendarType(CALENDAR_TYPE)
-                    .setDate(Integer.parseInt(s[2]), Integer.parseInt(s[1]), Integer.parseInt(s[0]))
-                    .build();
+            d = cb.setDate(Integer.parseInt(s[2]),
+                            Integer.parseInt(s[1]),
+                            Integer.parseInt(s[0]))
+                    .build()
+                    .getTime();
+
         } catch (IllegalArgumentException e) {
             return null;
         }
 
-        return c;
+        return d;
     }
 
     @Override
@@ -173,19 +155,23 @@ public class Book {
                 .append("ISBN", ISBN)
                 .append("title", title)
                 .append("authors", authors)
-                .append("datePublished", datePublished)
+                .append("publishDate", publishDate)
                 .toString();
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) { return false; }
+        if (obj == null) {
+            return false;
+        }
 
         if (this.getClass() != obj.getClass()) {
             return false;
         }
 
-        if (obj == this) { return true; }
+        if (obj == this) {
+            return true;
+        }
 
         Book book = (Book) obj;
 
@@ -193,7 +179,7 @@ public class Book {
                 .append(ISBN, book.ISBN)
                 .append(title, book.title)
                 .append(authors, book.authors)
-                .append(datePublished, book.datePublished)
+                .append(publishDate, book.publishDate)
                 .isEquals();
     }
 
@@ -203,7 +189,7 @@ public class Book {
                 .append(ISBN)
                 .append(title)
                 .append(authors)
-                .append(datePublished)
+                .append(publishDate)
                 .toHashCode();
     }
 }
