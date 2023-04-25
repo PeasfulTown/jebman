@@ -1,4 +1,9 @@
-package xyz.peasfultown.library.base;
+/**
+ * See end of file for extended copyright information.
+ * Original Author(s): PeasfulTown <peasfultown@gmail.com>
+ * Description: Tests for BookSeries class.
+ */
+package xyz.peasfultown.base;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,12 +13,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.peasfultown.db.BookDb;
 
 public class BookSeriesTest {
     private static final Logger logger = LoggerFactory.getLogger(BookSeriesTest.class);
 
-    private Book b0, b1, b2, b3, b4, b5, b6, b7, b8, b9;
+    private Book b0, b1, b2;
     private BookSeries bookseries0;
+    BookDb bookdb;
 
     @BeforeEach
     void setUp() {
@@ -25,7 +32,6 @@ public class BookSeriesTest {
         b0.setNumberInSeries(0.5);
         b1.setNumberInSeries(1);
         b2.setNumberInSeries(2);
-
 
         bookseries0 = new BookSeries("Outlander");
         bookseries0.addBook(b0);
@@ -42,12 +48,18 @@ public class BookSeriesTest {
         assertNotNull(bookseries0.getBooks(), "series' book array shouldn't be null");
         assertTrue(bookseries0.getNumberOfBooks() > 0, "series' book array size should not be 0");
         assertTrue(bookseries0.getNumberOfBooks() == 3, "series' book array size should equal 3");
-        assertTrue(bookseries0.getBookByIndex(0).equals(b0), "book's name in series should be the same");
-        assertTrue(bookseries0.getBookByIndex(1).equals(b1), "book's name in series should be the same");
-        assertTrue(bookseries0.getBookByIndex(2).equals(b2), "book's name in series should be the same");
-        assertTrue(bookseries0.getBookByBookNumber(0.5).equals(b0), "book at the specified book should be equal to the defined book");
-        assertTrue(bookseries0.getBookByBookNumber(1).equals(b1), "book at the specified book number should be equal to the defined book");
-        assertTrue(bookseries0.getBookByBookNumber(2).equals(b2), "book at the specified book number should be equal to the defined book");
+        assertTrue(bookseries0.getBookByIndex(0).equals(b0), "book's name in series " +
+                "should be the same");
+        assertTrue(bookseries0.getBookByIndex(1).equals(b1), "book's name in series " +
+                "should be the same");
+        assertTrue(bookseries0.getBookByIndex(2).equals(b2), "book's name in series " +
+                "should be the same");
+        assertTrue(bookseries0.getBookByBookNumber(0.5).equals(b0), "book at the specified " +
+                "book should be equal to the defined book");
+        assertTrue(bookseries0.getBookByBookNumber(1).equals(b1), "book at the specified " +
+                "book number should be equal to the defined book");
+        assertTrue(bookseries0.getBookByBookNumber(2).equals(b2), "book at the specified " +
+                "book number should be equal to the defined book");
     }
 
     @Test
@@ -121,3 +133,31 @@ public class BookSeriesTest {
         this.bookseries0 = null;
     }
 }
+
+/**
+ * The MIT License (MIT)
+ * =====================
+ * <p>
+ * Copyright © 2023 PeasfulTown
+ * <p>
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the “Software”), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ * <p>
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * <p>
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
