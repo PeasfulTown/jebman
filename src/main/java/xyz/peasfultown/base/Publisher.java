@@ -58,6 +58,14 @@ public class Publisher {
         this.name = name;
     }
 
+    public static Publisher parse(String publisherRecord) {
+        String[] elems = publisherRecord.split(",");
+        Publisher newPub = new Publisher();
+        newPub.setId(Integer.valueOf(elems[0]));
+        newPub.setName(elems[1]);
+        return newPub;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)

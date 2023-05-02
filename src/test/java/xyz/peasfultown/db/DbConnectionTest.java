@@ -48,14 +48,16 @@ public class DbConnectionTest {
 
         closeConnection();
 
-        Path dbfile = Paths.get("test-metadata.db");
+        String dbFile = new StringBuilder(System.getProperty("java.io.tmpdir"))
+                .append(System.getProperty("file.separator"))
+                .append("test-metadata.db").toString();
 
-        boolean fileExists = Files.exists(dbfile);
+        boolean fileExists = Files.exists(Path.of(dbFile));
         assertTrue(fileExists, "Database file should have existed");
         logger.info("database file found");
 
         try {
-            Files.delete(dbfile);
+            Files.delete(Path.of(dbFile));
             logger.info("database file deleted");
         } catch (IOException e) {
             logger.error(e.getMessage());

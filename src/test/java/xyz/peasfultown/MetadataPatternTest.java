@@ -111,20 +111,28 @@ public class MetadataPatternTest {
         // YYYY-MM-DD format
         String pattern1 = MetaReader.PATTERN_DATE;
         // ISO8601 format
+        // yyyy-mm-ddTHH:MM:SSZ
         // TODO: add extra checks for different ISO formats
         String pattern2 = MetaReader.PATTERN_ISO_DATETIME;
+        // yyyy-mm-ddTHH:MM:SS+HH:MM
+        String pattern3 = MetaReader.PATTERN_ISO_DATETIME_OFFSET;
 
-
-        String[] dates = new String[] {
+        String[] date = new String[] {
                 "1994-08-01",
                 "2023-04-01",
                 "1998-11-01",
+        };
+
+        String[] dateTime = new String[] {
                 "2016-12-27T11:30:00Z",
                 "2023-04-21T19:34:49Z",
                 "2023-04-01T14:09:35Z",
+                "2023-04-22T00:51:02.812104341Z",
+        };
+
+        String[] dateTimeWithOffset = new String[] {
                 "2009-08-15T07:00:00+00:00",
                 "2010-03-02T23:12:20.748000+00:00",
-                "2023-04-22T00:51:02.812104341Z",
                 "2023-04-01T11:20:38.883045+00:00",
         };
 
@@ -141,15 +149,28 @@ public class MetadataPatternTest {
                 "2023-04-22t00:51:02.41Z",
         };
 
-        for (int i = 0; i < dates.length; i++) {
-            boolean match = Pattern.matches(pattern1, dates[i]) || Pattern.matches(pattern2, dates[i]);
+        for (int i = 0; i < date.length; i++) {
+            boolean match = Pattern.matches(pattern1, date[i]);
 
-            assertTrue(match, dates[i] + " should match pattern1");
+            assertTrue(match, date[i] + " should match pattern \"" + pattern1 + "\"");
+        }
+
+        for (int i = 0; i < dateTime.length; i++) {
+            boolean match = Pattern.matches(pattern2, dateTime[i]) && !Pattern.matches(pattern3, dateTime[i]);
+
+            assertTrue(match, dateTime[i] + " should match pattern \"" + pattern2 + "\"");
+        }
+
+        for (int i = 0; i < dateTimeWithOffset.length; i++) {
+            boolean match = Pattern.matches(pattern3, dateTimeWithOffset[i]) && !Pattern.matches(pattern2, dateTimeWithOffset[i]);
+
+            assertTrue(match, dateTimeWithOffset[i] + " should match \"" + pattern3 + "\"");
         }
 
         for (int i = 0; i < fake.length; i++) {
-            boolean match = Pattern.matches(pattern1, fake[i]) || Pattern.matches(pattern2, fake[i]);
-            assertFalse(match, fake[i] + " should not match pattern1 (non-iso8601 format)");
+            boolean match = Pattern.matches(pattern1, fake[i]) || Pattern.matches(pattern2, fake[i]) || Pattern.matches(pattern3, fake[i]);
+
+            assertFalse(match, fake[i] + " should not match any date patterns");
         }
     }
 

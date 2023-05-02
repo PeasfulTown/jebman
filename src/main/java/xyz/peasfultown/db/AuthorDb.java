@@ -10,6 +10,7 @@ import xyz.peasfultown.base.Author;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class AuthorDb {
     private static final String SQL_SELECT_TABLE = new StringBuilder()
@@ -27,18 +28,13 @@ public class AuthorDb {
             .append(");")
             .toString();
 
-    private static final String SQL_SELECT_LAST_INSERT_ID = "SELECT last_insert_rowid() AS id;";
-
+    private static final String SQL_QUERY_LAST_INSERT_ID = "SELECT last_insert_rowid() AS id;";
     private static final String SQL_DROP_TABLE = "DROP TABLE IF EXISTS authors;";
-
-    private static final String SQL_SELECT_ALL = "SELECT * FROM authors;";
-
-    private static final String SQL_SELECT_BY_ID = "SELECT * FROM authors WHERE id=?;";
-
+    private static final String SQL_QUERY_ALL = "SELECT * FROM authors;";
+    private static final String SQL_QUERY_BY_ID = "SELECT * FROM authors WHERE id=?;";
+    private static final String SQL_QUERY_BY_NAME = "SELECT * FROM authors WHERE name=?;";
     private static final String SQL_INSERT_AUTHOR = "INSERT INTO authors (name) VALUES (?);";
-
     private static final String SQL_DELETE_BY_ID = "DELETE FROM authors WHERE id=?;";
-
     private static final String SQL_UPDATE_AUTHOR = "UPDATE authors SET name=? WHERE id=?;";
 
     /**
@@ -50,44 +46,71 @@ public class AuthorDb {
      * @return List object of Author objects
      * @throws SQLException
      */
-    public static List<Author> queryAll(Connection con) throws SQLException {
+    public static List<String> queryAll(Connection con) throws SQLException {
         Statement stmt = null;
         ResultSet rs = null;
-        List<Author> aulist = new ArrayList<>();
+        List<String> authors = new ArrayList<>();
 
         try {
             stmt = con.createStatement();
-            rs = stmt.executeQuery(SQL_SELECT_ALL);
+            rs = stmt.executeQuery(SQL_QUERY_ALL);
 
             while (rs.next()) {
+                String newAuthor = new StringJoiner(",")
+                        .add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name")).toString();
+
                 Author newAu = new Author(rs.getString("name"));
                 newAu.setId(rs.getInt("id"));
-                aulist.add(newAu);
+                authors.add(newAuthor);
             }
         } finally {
             closeResources(stmt, rs);
         }
 
-        return aulist;
+        return authors;
     }
 
-    public static Author queryById(Connection con, int id) throws SQLException {
+    public static String queryById(Connection con, int id) throws SQLException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        Author author = null;
+        String author = null;
 
         try {
-            stmt = con.prepareStatement(SQL_SELECT_BY_ID);
+            stmt = con.prepareStatement(SQL_QUERY_BY_ID);
             stmt.setInt(1, id);
 
             rs = stmt.executeQuery();
 
             if (rs.next()) {
-                author = new Author("");
-                author.setId(rs.getInt("id"));
-                author.setName(rs.getString("name"));
+                author = new StringJoiner(",")
+                        .add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name")).toString();
             } else {
                 throw new SQLException("Querying author by id failed, no returned values.");
+            }
+        } finally {
+            closeResources(stmt, rs);
+        }
+
+        return author;
+    }
+
+    public static String queryByName(Connection con, String name) throws SQLException {
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        String author = null;
+
+        try {
+            stmt = con.prepareStatement(SQL_QUERY_BY_NAME);
+            stmt.setString(1, name);
+
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                author = new StringJoiner(",")
+                        .add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name")).toString();
             }
         } finally {
             closeResources(stmt, rs);
@@ -100,19 +123,17 @@ public class AuthorDb {
      * Insert a provided Author record into SQLite database on the provided Connection.
      *
      * @param con            SQLite database connection to insert to.
-     * @param authorToInsert Author object to insert to database.
+     * @param author Author object to insert to database.
      * @throws SQLException
      */
-    public static Author insert(Connection con, Author authorToInsert) throws SQLException {
+    public static Author insert(Connection con, Author author) throws SQLException {
         PreparedStatement stmt = null;
-        ResultSet rs = null;
-        Author newAuthor = null;
 
         try {
             con.setAutoCommit(false);
 
             stmt = con.prepareStatement(SQL_INSERT_AUTHOR);
-            stmt.setString(1, authorToInsert.getName());
+            stmt.setString(1, author.getName());
 
             int rows = stmt.executeUpdate();
 
@@ -120,9 +141,7 @@ public class AuthorDb {
                 throw new SQLException("Inserting author failed, no rows affected.");
             }
 
-            newAuthor = new Author("");
-            newAuthor.setId(queryLastInsertId(con));
-            newAuthor.setName(authorToInsert.getName());
+            author.setId(queryLastInsertId(con));
 
             con.commit();
         } finally {
@@ -130,43 +149,37 @@ public class AuthorDb {
             closeResources(stmt);
         }
 
-        return newAuthor;
+        return author;
     }
 
     /**
      * Batch insert a list of authors objects into the <i>authors</i> database.
      *
      * @param con             SQLite database connection to insert to.
-     * @param authorsToInsert List of author objects to insert to database.
+     * @param authors List of author objects to insert to database.
      * @throws SQLException
      */
-    public static List<Author> insert(Connection con, List<Author> authorsToInsert) throws SQLException {
+    public static List<Author> insert(Connection con, List<Author> authors) throws SQLException {
         PreparedStatement stmt = null;
         Savepoint sp = null;
-
-        List<Author> newAuthorsToReturn = null;
 
         try {
             con.setAutoCommit(false);
             sp = con.setSavepoint();
             stmt = con.prepareStatement(SQL_INSERT_AUTHOR);
-            newAuthorsToReturn = new ArrayList<>();
 
-            for (int i = 0; i < authorsToInsert.size(); i++) {
-                stmt.setString(1, authorsToInsert.get(i).getName());
+            for (int i = 0; i < authors.size(); i++) {
+                Author a = authors.get(i);
+                stmt.setString(1, a.getName());
 
                 int rows = stmt.executeUpdate();
 
                 if (rows == 0) {
                     con.rollback(sp);
-                    newAuthorsToReturn = null;
                     throw new SQLException("Batch insert failed at index: " + i + ", no rows affected.");
                 }
 
-                Author newAu = new Author("");
-                newAu.setId(queryLastInsertId(con));
-                newAu.setName(authorsToInsert.get(i).getName());
-                newAuthorsToReturn.add(newAu);
+                a.setId(queryLastInsertId(con));
             }
 
             con.commit();
@@ -175,7 +188,7 @@ public class AuthorDb {
             closeResources(stmt);
         }
 
-        return newAuthorsToReturn;
+        return authors;
     }
 
     /**
@@ -351,7 +364,7 @@ public class AuthorDb {
 
         try {
             stmt = con.createStatement();
-            rs = stmt.executeQuery(SQL_SELECT_LAST_INSERT_ID);
+            rs = stmt.executeQuery(SQL_QUERY_LAST_INSERT_ID);
 
             if (rs.next()) {
                 id = rs.getInt("id");

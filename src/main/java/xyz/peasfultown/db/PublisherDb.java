@@ -10,15 +10,14 @@ import xyz.peasfultown.base.Publisher;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class PublisherDb {
     private static final String SQL_FIND_TABLE = new StringBuilder()
-        .append("SELECT name FROM sqlite_master ")
-        .append("WHERE type='table' AND name='publishers';")
-        .toString();
-
+            .append("SELECT name FROM sqlite_master ")
+            .append("WHERE type='table' AND name='publishers';")
+            .toString();
     private static final String SQL_DROP_TABLE = "DROP TABLE IF EXISTS publishers;";
-
     private static final String SQL_CREATE_TABLE = new StringBuilder()
             .append("CREATE TABLE IF NOT EXISTS publishers (")
             .append("id INTEGER")
@@ -28,124 +27,119 @@ public class PublisherDb {
             .append("   CONSTRAINT uq_publishers_n UNIQUE")
             .append(");")
             .toString();
-
     private static final String SQL_SELECT_LAST_INSERT_ID = "SELECT last_insert_rowid() AS id;";
     private static final String SQL_SELECT_ALL_PUBLISHERS = "SELECT * FROM publishers;";
     private static final String SQL_INSERT_PUBLISHER = "INSERT INTO publishers (name) VALUES (?);";
-    private static final String SQL_SELECT_PUBLISHER_BY_ID = "SELECT * FROM publishers WHERE id=?;";
-    private static final String SQL_SELECT_PUBLISHER_BY_NAME = "SELECT * FROM publishers WHERE lower(name)=?;";
+    private static final String SQL_QUERY_BY_ID = "SELECT * FROM publishers WHERE id=?;";
+    private static final String SQL_QUERY_BY_NAME = "SELECT * FROM publishers WHERE lower(name)=?;";
     private static final String SQL_UPDATE_PUBLISHER_BY_ID = "UPDATE publishers SET name=? WHERE id=?;";
     private static final String SQL_DELETE_PUBLISHER_BY_ID = "DELETE FROM publishers WHERE id=?;";
     private static final String SQL_DELETE_PUBLISHER_BY_NAME = "DELETE FROM publishers WHERE lower(name)=?;";
 
-    public static Publisher insert(Connection con, Publisher publisherToInsert) throws SQLException {
+    public static Publisher insert(Connection con, Publisher publisher) throws SQLException {
         PreparedStatement stmt = null;
-        Publisher returnedPub = null;
 
         try {
             con.setAutoCommit(false);
             stmt = con.prepareStatement(SQL_INSERT_PUBLISHER);
-            stmt.setString(1, publisherToInsert.getName());
+            stmt.setString(1, publisher.getName());
             int rows = stmt.executeUpdate();
-
             if (rows == 0) {
                 throw new SQLException("Inserting publisher record failed, no rows affected.");
             }
-
-            returnedPub = new Publisher();
-            returnedPub.setId(getLastInsertedId(con));
-            returnedPub.setName(publisherToInsert.getName());
-
+            publisher.setId(getLastInsertedId(con));
             con.commit();
         } finally {
             con.setAutoCommit(true);
-            if (stmt != null && !stmt.isClosed()) {
-                stmt.close();
-            }
+            closeResources(stmt);
         }
 
-        return returnedPub;
+        return publisher;
     }
 
-    public static List<Publisher> queryAll(Connection con) throws SQLException {
+    public static List<String> queryAll(Connection con) throws SQLException {
         Statement stmt = null;
         ResultSet rs = null;
-        List<Publisher> publishers = null;
+        List<String> publishers = null;
 
         try {
             stmt = con.createStatement();
             rs = stmt.executeQuery(SQL_SELECT_ALL_PUBLISHERS);
-            while (rs.next()) {
-                if (publishers == null) {
-                    publishers = new ArrayList<>();
-                }
-                Publisher newPub = new Publisher();
-                newPub.setId(rs.getInt("id"));
-                newPub.setName(rs.getString("name"));
-                publishers.add(newPub);
-            }
-        } finally {
-            if (stmt != null) {
-                stmt.close();
+
+            if (publishers == null) {
+                publishers = new ArrayList<>();
             }
 
-            if (rs != null) {
-                rs.close();
+            while (rs.next()) {
+                StringJoiner sj = new StringJoiner(",");
+
+                sj.add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name"));
+
+                publishers.add(sj.toString());
             }
+        } finally {
+            closeResources(stmt, rs);
+        }
+
+        if (publishers.size() == 0) {
+            return null;
         }
 
         return publishers;
     }
 
-    public static Publisher queryById(Connection con, int id) throws SQLException {
-        PreparedStatement stmt = null;
-        Publisher publisher = null;
-
-        try {
-            stmt = con.prepareStatement(SQL_SELECT_PUBLISHER_BY_ID);
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                publisher = new Publisher();
-                publisher.setName(rs.getString("name"));
-            }
-        } finally {
-            if (stmt != null && !stmt.isClosed()) {
-                stmt.close();
-            }
-        }
-
-        return publisher;
-    }
-
-    public static Publisher queryByName(Connection con, String name) throws SQLException {
+    public static String queryById(Connection con, int id) throws SQLException {
         PreparedStatement stmt = null;
         ResultSet rs = null;
-        Publisher publisher = null;
+        StringJoiner sj = new StringJoiner(",");
+
         try {
-            stmt = con.prepareStatement(SQL_SELECT_PUBLISHER_BY_NAME);
+            stmt = con.prepareStatement(SQL_QUERY_BY_ID);
+            stmt.setInt(1, id);
+            rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                sj.add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name"));
+            }
+        } finally {
+            closeResources(stmt, rs);
+        }
+
+        if (sj.toString().length() == 0) {
+            return null;
+        }
+
+        return sj.toString();
+    }
+
+    public static String queryByName(Connection con, String name) throws SQLException {
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        StringJoiner sj = new StringJoiner(",");
+
+        try {
+            stmt = con.prepareStatement(SQL_QUERY_BY_NAME);
             stmt.setString(1, name.toLowerCase());
             rs = stmt.executeQuery();
             if (rs.next()) {
-                publisher = new Publisher();
-                publisher.setName(rs.getString("name"));
+                sj.add(String.valueOf(rs.getInt("id")))
+                        .add(rs.getString("name"));
             }
         } finally {
-            if (stmt != null) {
-                stmt.close();
-            }
-
-            if (rs != null) {
-                rs.close();
-            }
+            closeResources(stmt, rs);
         }
 
-        return publisher;
+        if (sj.toString().length() == 0) {
+            return null;
+        }
+
+        return sj.toString();
     }
 
-    public static Publisher updateById(Connection con, int id, Publisher updatedPub) throws SQLException {
+    public static void update(Connection con, int id, Publisher updatedPub) throws SQLException {
         PreparedStatement stmt = null;
-        Publisher returnedPublisher = null;
 
         try {
             con.setAutoCommit(false);
@@ -154,35 +148,30 @@ public class PublisherDb {
             stmt.setInt(2, id);
             int rows = stmt.executeUpdate();
 
-            if (rows == 0) {
+            if (rows == 0)
                 throw new SQLException("Updating publisher record failed, no rows affected.");
-            }
-
-            returnedPublisher = new Publisher();
-            returnedPublisher.setId(getLastInsertedId(con));
-            returnedPublisher.setName(updatedPub.getName());
 
             con.commit();
         } finally {
             con.setAutoCommit(true);
 
-            if (stmt != null) {
-                stmt.close();
-            }
+            closeResources(stmt);
         }
-
-        return returnedPublisher;
     }
 
-    public static int deleteById(Connection con, int id) throws SQLException {
+    public static void deleteById(Connection con, int id) throws SQLException {
         PreparedStatement stmt = null;
 
-        int rowsAffected = 0;
+        int rows = 0;
         try {
             con.setAutoCommit(false);
             stmt = con.prepareStatement(SQL_DELETE_PUBLISHER_BY_ID);
             stmt.setInt(1, id);
-            rowsAffected = stmt.executeUpdate();
+            rows = stmt.executeUpdate();
+
+            if (rows == 0)
+                throw new SQLException("Record deletion failed, no rows affected.");
+
             con.commit();
         } finally {
             con.setAutoCommit(true);
@@ -190,19 +179,21 @@ public class PublisherDb {
                 stmt.close();
             }
         }
-
-        return rowsAffected;
     }
 
-    public static int deleteByName(Connection con, String name) throws SQLException {
+    public static void deleteByName(Connection con, String name) throws SQLException {
         PreparedStatement stmt = null;
-        int rowsAffected = 0;
+        int rows = 0;
 
         try {
             con.setAutoCommit(false);
             stmt = con.prepareStatement(SQL_DELETE_PUBLISHER_BY_NAME);
             stmt.setString(1, name.toLowerCase());
-            rowsAffected = stmt.executeUpdate();
+            rows = stmt.executeUpdate();
+
+            if (rows == 0)
+                throw new SQLException("Record deletion failed, no rows affected.");
+
             con.commit();
         } finally {
             con.setAutoCommit(true);
@@ -210,8 +201,6 @@ public class PublisherDb {
                 stmt.close();
             }
         }
-
-        return rowsAffected;
     }
 
     public static void createTable(Connection con) throws SQLException {
