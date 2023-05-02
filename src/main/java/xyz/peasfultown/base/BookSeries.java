@@ -78,7 +78,7 @@ public class BookSeries {
 
     public Book getBookByBookNumber(double bookNumber) {
         for (Book b : books) {
-            if (b.getNumberInSeries() == bookNumber) {
+            if (b.getSeriesNumber() == bookNumber) {
                 return b;
             }
         }
