@@ -10,6 +10,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class Author {
     private int id;
@@ -17,6 +18,11 @@ public class Author {
 
     public Author(String name) {
         this.name = name;
+    }
+
+    public Author(int id, String name) {
+        this(name);
+        this.id = id;
     }
 
     public int getId() {
@@ -59,18 +65,19 @@ public class Author {
         return auList;
     }
 
+    public static Author parse(String author) {
+        String[] parts = author.split(",");
+        return new Author(Integer.valueOf(parts[0]), parts[1]);
+    }
     public static String getStringOfAuthorFromList(List<Author> authors) {
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sj = new StringJoiner(",");
         int i = 0;
         while (i < authors.size()) {
-            sb.append(authors.get(i).getName());
-            if (i != authors.size() - 1) {
-                sb.append(",");
-            }
+            sj.add(authors.get(i).getName());
             i++;
         }
 
-        return sb.toString();
+        return sj.toString();
     }
 
     @Override
@@ -100,12 +107,9 @@ public class Author {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ID=");
-        sb.append(this.getId());
-        sb.append(",Name=");
-        sb.append(this.getName());
-        return sb.toString();
+        return new StringJoiner(",")
+                .add(String.valueOf(getId()))
+                .add(getName()).toString();
     }
 }
 

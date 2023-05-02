@@ -7,7 +7,6 @@ package xyz.peasfultown.base;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,29 +14,31 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 public class Book {
     private int id;
     private String isbn;
     private String uuid;
     private String title;
+    private BookSeries series;
+    private double seriesNumber;
+    private Publisher publisher;
     private Instant publishDate;
     private Instant addedDate;
     private Instant modifiedDate;
-    private List<Author> authors;
-    private Publisher publisher;
-    private double numberInSeries;
+    private Author authors;
 
     public Book() {
         this.isbn = "";
         this.uuid = "";
         this.title = "Unknown";
+        this.series = null;
+        this.seriesNumber = 1.0;
+        this.publisher = null;
         this.publishDate = Instant.now().truncatedTo(ChronoUnit.DAYS);
         this.addedDate = this.modifiedDate = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        this.authors = new ArrayList<>();
-        this.publisher = null;
-
-        this.numberInSeries = 1.0;
+        this.authors = null;
     }
 
     public Book(String title) {
@@ -45,20 +46,22 @@ public class Book {
         this.title = title;
     }
 
-    public Book(int id, String isbn, String uuid, String title, Instant publishDate) {
+    public Book(String isbn, String uuid, String title, Instant publishDate) {
         this(title);
-        this.id = id;
         this.isbn = isbn;
         this.uuid = uuid;
         this.publishDate = publishDate.truncatedTo(ChronoUnit.DAYS);
     }
 
-    public Book(int id, String isbn, String uuid, String title, Publisher publisher, Instant publishDate, Instant addedDate, Instant modifiedDate, double numberInSeries) {
-        this(id, isbn, uuid, title, publishDate);
+    public Book(int id, String isbn, String uuid, String title, BookSeries series, Double seriesNumber, Publisher publisher,
+                Instant publishDate, Instant addedDate, Instant modifiedDate) {
+        this(isbn, uuid, title, publishDate);
+        this.id = id;
+        this.series = series;
+        this.seriesNumber = seriesNumber;
         this.publisher = publisher;
         this.addedDate = addedDate.truncatedTo(ChronoUnit.SECONDS);
         this.modifiedDate = modifiedDate.truncatedTo(ChronoUnit.SECONDS);
-        this.numberInSeries = numberInSeries;
     }
 
     public int getId() {
@@ -81,8 +84,20 @@ public class Book {
         return this.uuid;
     }
 
+    public void  setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     public String getTitle() {
         return title;
+    }
+
+    public void setSeries(BookSeries series) {
+        this.series = series;
+    }
+
+    public BookSeries getSeries() {
+        return this.series;
     }
 
     public void setTitle(String title) {
@@ -113,12 +128,12 @@ public class Book {
         this.modifiedDate = modifiedDate.truncatedTo(ChronoUnit.SECONDS);
     }
 
-    public List<Author> getAuthors() {
+    public Author getAuthors() {
         return this.authors;
     }
 
-    public void addAuthor(Author author) {
-        this.authors.add(author);
+    public void setAuthor(Author author) {
+        this.authors = author;
     }
 
     public Publisher getPublisher() {
@@ -129,12 +144,12 @@ public class Book {
         this.publisher = publisher;
     }
 
-    public void setNumberInSeries(double number) {
-        this.numberInSeries = number;
+    public void setSeriesNumber(double number) {
+        this.seriesNumber = number;
     }
 
-    public double getNumberInSeries() {
-        return this.numberInSeries;
+    public double getSeriesNumber() {
+        return this.seriesNumber;
     }
 
     // ============ Static methods ============
@@ -147,15 +162,22 @@ public class Book {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("ID", id)
-                .append("ISBN", isbn)
-                .append("title", title)
-                .append("publisher", publisher)
-                .append("publishDate", publishDate)
-                .append("addedDate", addedDate)
-                .append("modifiedDate", modifiedDate)
-                .toString();
+        boolean seriesIsNull = getSeries() == null;
+        boolean publisherIsNull = getPublisher() == null;
+
+        return new StringJoiner(",")
+                .add(String.valueOf(getId()))
+                .add(getIsbn())
+                .add(getUuid())
+                .add(getTitle())
+                .add(seriesIsNull ? "0" : String.valueOf(getSeries().getId()))
+                .add(seriesIsNull ? "null" : getSeries().getName())
+                .add(String.valueOf(getSeriesNumber()))
+                .add(publisherIsNull ? "0" : String.valueOf(getPublisher().getId()))
+                .add(publisherIsNull ? "null" : getPublisher().getName())
+                .add(getPublishDate().toString())
+                .add(getAddedDate().toString())
+                .add(getModifiedDate().toString()).toString();
     }
 
     @Override
