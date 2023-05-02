@@ -12,19 +12,22 @@ import java.sql.SQLException;
 public class DbConnection {
     protected DbConnection() {
     }
-    public static final String CONNECTION_STRING = "jdbc:sqlite:metadata.db";
-    public static final String TEST_CONNECTION_STRING = "jdbc:sqlite:test-metadata.db";
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(CONNECTION_STRING);
-    }
+    public static final String CONNECTION_STRING = "jdbc:sqlite:%s";
 
     public static Connection getTestConnection() throws SQLException {
-        return DriverManager.getConnection(TEST_CONNECTION_STRING);
+        StringBuilder sb = new StringBuilder(System.getProperty("java.io.tmpdir"))
+                .append(System.getProperty("file.separator"))
+                .append("test-metadata.db");
+        return DriverManager.getConnection(String.format(CONNECTION_STRING, sb));
+    }
+    
+    public static Connection getConnection(String path) throws SQLException {
+        return DriverManager.getConnection(String.format(CONNECTION_STRING, path));
     }
 
-    public static void closeConnection(Connection con) throws SQLException {
-        if (con != null && !con.isClosed()) {
+    public static void close(Connection con) throws SQLException {
+        if (con != null) {
             con.close();
         }
     }
