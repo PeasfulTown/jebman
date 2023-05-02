@@ -22,6 +22,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -33,8 +37,8 @@ class MetaReader {
     public static final String PATTERN_ISBN = "(97[89])?([0-9]){10}";
     public static final String PATTERN_UUID = "([a-zA-Z0-9]{8})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{12})";
     public static final String PATTERN_DATE = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))";
-    public static final String PATTERN_ISO_DATETIME = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??(Z|\\+[0-5][0-9]:[0-5][0-9])";
-
+    public static final String PATTERN_ISO_DATETIME = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??Z";
+    public static final String PATTERN_ISO_DATETIME_OFFSET = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??(\\+[0-5][0-9]:[0-5][0-9])";
     private static final String EPUB_META_FILE_NAME_PATTERN = ".*?(content.opf)$";
 
     /**
@@ -43,9 +47,23 @@ class MetaReader {
     protected MetaReader() {
     }
 
-    public static HashMap<String, String> getEpubMetadata(String filePath) throws IOException, XMLStreamException {
-        Path file = Path.of(filePath);
+    public static HashMap<String, String> getPDFMetadata(Path file) throws IOException {
+        HashMap<String, String> metadata = new HashMap<>();
 
+        try (PDDocument pdf = PDDocument.load(file.toFile())) {
+            PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
+            if (pdfInfo.getTitle() != null)
+                metadata.put("title", pdfInfo.getTitle());
+            if (pdfInfo.getAuthor() != null)
+                metadata.put("author", pdfInfo.getAuthor());
+            if (pdfInfo.getCreationDate() != null)
+                metadata.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+        }
+
+        return metadata;
+    }
+
+    public static HashMap<String, String> getEpubMetadata(Path file) throws IOException, XMLStreamException {
         if (!Files.exists(file)) {
             throw new FileNotFoundException("File not found.");
         }
@@ -66,8 +84,6 @@ class MetaReader {
 
             String propName = null;
             boolean keepProp = false;
-            int iIsbn = 0;
-            int iUuid = 0;
             while (xsr.hasNext()) {
                 xsr.next();
 
@@ -85,11 +101,9 @@ class MetaReader {
                             boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
 
                             if (isUUID) {
-                                meta.putIfAbsent(String.format("uuid%s", iUuid), parserText);
-                                iUuid++;
+                                meta.putIfAbsent("uuid", parserText);
                             } else {
-                                meta.putIfAbsent(String.format("isbn%s", iIsbn), parserText);
-                                iIsbn++;
+                                meta.putIfAbsent("isbn", parserText);
                             }
                         } else {
                             meta.putIfAbsent(propName, parserText);
@@ -99,7 +113,7 @@ class MetaReader {
                     keepProp = false;
                 }
 
-                // End parsing job when the metadata tag is ended
+                // End parsing job once the metadata tag is ended
                 if (xsr.isEndElement()) {
                     if (xsr.getLocalName().equals("metadata")) {
                         break;
@@ -122,17 +136,16 @@ class MetaReader {
         return meta;
     }
 
-    public static HashMap getPDFMetadata(String filepath) throws IOException {
-        HashMap<String, String> metadata = new HashMap<>();
-
-        try (PDDocument pdf = PDDocument.load(Path.of(filepath).toFile())) {
-            PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
-            metadata.put("title", pdfInfo.getTitle());
-            metadata.put("author", pdfInfo.getAuthor());
-            metadata.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+    public static Instant parseDate(String date) {
+        if (Pattern.matches(PATTERN_DATE, date)) {
+            return LocalDate.parse(date).atStartOfDay().toInstant(ZoneOffset.UTC);
+        } else if (Pattern.matches(PATTERN_ISO_DATETIME, date)) {
+            return Instant.parse(date);
+        } else if (Pattern.matches(PATTERN_ISO_DATETIME_OFFSET, date)) {
+            return DateTimeFormatter.ISO_OFFSET_DATE_TIME.parse(date, Instant::from);
         }
 
-        return metadata;
+        return Instant.now().truncatedTo(ChronoUnit.DAYS);
     }
 
     private static ZipEntry getEpubMetaFile(ZipFile zipFile) {

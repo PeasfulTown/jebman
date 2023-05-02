@@ -36,7 +36,7 @@ import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// TODO (tweak): Probe filetype
+// TODO (tweak): Probe filetype by checking extension
 public class MetaReaderTest {
     private static final Logger logger = LoggerFactory.getLogger(MetaReaderTest.class);
 
@@ -46,7 +46,7 @@ public class MetaReaderTest {
 
     @Test
     void getEpubMetaUsingSAX() {
-        logger.info("Fetching epub metadata using SAX handler");
+        logger.info("=== Fetching epub metadata using SAX handler");
         HashMap meta = null;
         try {
             meta = MetaReader.getEpubMetadataSAX(gatsby);
@@ -69,12 +69,13 @@ public class MetaReaderTest {
 
     @Test
     void getEpubMetaUsingStAX1() throws IOException, XMLStreamException {
-        HashMap<String, String> meta = MetaReader.getEpubMetadata(getFileFromResources("gatsby.epub")
-                .toAbsolutePath()
-                .toString());
+        Path file = getFileFromResources("gatsby.epub");
+        HashMap<String, String> meta = MetaReader.getEpubMetadata(file);
+
+        logger.info("=== Checking \"{}\" metadata", file);
 
         assertNotNull(meta);
-        assertEquals("40b74d9e-9c86-4593-968b-8b4101013ce2", meta.get("uuid0"));
+        assertEquals("40b74d9e-9c86-4593-968b-8b4101013ce2", meta.get("uuid"));
         assertEquals("The Great Gatsby", meta.get("title"));
         assertEquals("Francis Scott Fitzgerald", meta.get("creator"));
         assertEquals("2010-03-02T23:12:20.748000+00:00", meta.get("date"));
@@ -88,16 +89,19 @@ public class MetaReaderTest {
 
     @Test
     void getEpubMetaUsingStAX2() throws IOException, XMLStreamException {
+        Path file = getFileFromResources("frankenstein.epub");
+
         HashMap<String, String> meta = MetaReader
-                .getEpubMetadata(getFileFromResources("frankenstein.epub")
-                        .toString());
+                .getEpubMetadata(file);
+
+        logger.info("=== Checking \"{}\" metadata", file);
 
         assertNotNull(meta);
         meta.forEach((key, val) -> {
             logger.info("{} = {}", key, val);
         });
-        assertEquals("9780199537150", meta.get("isbn0"));
-        assertEquals("3f2fdc96-e5f6-430f-a08a-8c6c9dc8341c", meta.get("uuid0"));
+        assertEquals("9780199537150", meta.get("isbn"));
+        assertEquals("3f2fdc96-e5f6-430f-a08a-8c6c9dc8341c", meta.get("uuid"));
         assertEquals("Frankenstein", meta.get("title"));
         assertEquals("2009-08-15T07:00:00+00:00", meta.get("date"));
         assertEquals("Mary Wollstonecraft Shelley", meta.get("creator"));
@@ -115,16 +119,10 @@ public class MetaReaderTest {
     void getPDFMeta1() {
         Path file = getFileFromResources("machine-stops.pdf");
         HashMap<String, String> meta = new HashMap<>();
-        logger.info("Checking \"{}\" metadata", file.toAbsolutePath().toString());
-        try (PDDocument pdf = PDDocument.load(file.toFile())) {
-            PDDocumentInformation documentInformation = pdf.getDocumentInformation();
-            logger.info("Title = {}", documentInformation.getTitle());
-            logger.info("Author = {}", documentInformation.getAuthor());
-            logger.info("Creation Date = {}", documentInformation.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS));
 
-            meta.putIfAbsent("title", documentInformation.getTitle());
-            meta.putIfAbsent("author", documentInformation.getAuthor());
-            meta.putIfAbsent("date", documentInformation.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+        logger.info("=== Checking \"{}\" metadata", file.toAbsolutePath().toString());
+        try {
+            meta = MetaReader.getPDFMetadata(file);
         } catch (IOException e) {
             logger.error(e.getMessage());
             fail(e);
@@ -137,18 +135,10 @@ public class MetaReaderTest {
     @Test
     void getPDFMeta2() {
         Path file = getFileFromResources("dummy.pdf");
-        logger.info("Checking \"{}\" metadata", file.toAbsolutePath().toString());
+        logger.info("=== Checking \"{}\" metadata", file.toAbsolutePath().toString());
         HashMap<String, String> meta = new HashMap<>();
-        try (PDDocument pdf = PDDocument.load(file.toFile())) {
-            PDDocumentInformation documentInformation = pdf.getDocumentInformation();
-
-            logger.info("Title = {}", documentInformation.getTitle());
-            logger.info("Author = {}", documentInformation.getAuthor());
-            logger.info("Creation Date = {}", documentInformation.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS));
-
-            meta.putIfAbsent("title", documentInformation.getTitle());
-            meta.putIfAbsent("author", documentInformation.getAuthor());
-            meta.putIfAbsent("date", documentInformation.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+        try  {
+            meta = MetaReader.getPDFMetadata(file);
         } catch (IOException e) {
             logger.error(e.getMessage());
             fail(e);
