@@ -1,3 +1,8 @@
+/**
+ * See end of file for extended copyright information.
+ * Original Author(s): PeasfulTown <peasfultown@gmail.com>
+ * Description: Tests for the BookDb class.
+ */
 package xyz.peasfultown.db;
 
 import org.junit.jupiter.api.*;
@@ -18,16 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(OrderAnnotation.class)
 class BookDbTest {
-
     private static final Logger logger = LoggerFactory.getLogger(BookDbTest.class);
-
     private static final Author AU_JOE_ABERCROMBIE = new Author("Joe Abercrombie");
-
     private static Connection con;
-
     private static List<Book> booklistG;
     private static Book b1, b2, b3, b4, b5;
-
     private static Publisher p1;
     private static Instant pubDate1, pubDate2, pubDate3;
 
@@ -44,31 +44,31 @@ class BookDbTest {
         pubDate2 = Book.toTimeStamp(2007, 3, 15);
         pubDate3 = Book.toTimeStamp(2008, 3, 20);
 
-        b1 = new Book("The Blade Itself");
-        b1.setIsbn("9780575079793");
+        b1 = new Book("9780575079793",
+                "",
+                "The Blade Itself",
+                pubDate1);
         b1.setPublisher(p1);
-        b1.setPublishDate(pubDate1);
-        b1.addAuthor(AU_JOE_ABERCROMBIE);
+        b1.setAuthor(AU_JOE_ABERCROMBIE);
 
-        b2 = new Book("Before They Are Hanged");
-        b2.setIsbn("9780575077881");
+        b2 = new Book("9780575077881",
+                "",
+                "Before They Are Hanged",
+                pubDate2);
         b2.setPublisher(p1);
-        b2.setPublishDate(pubDate2);
-        b2.addAuthor(AU_JOE_ABERCROMBIE);
-        b2.setNumberInSeries(2.0);
+        b2.setAuthor(AU_JOE_ABERCROMBIE);
+        b2.setSeriesNumber(2.0);
 
-        b3 = new Book("Last Argument of Kings");
-        b3.setIsbn("9780575077904");
+        b3 = new Book("9780575077904",
+                "",
+                "Last Argument of Kings",
+                pubDate3);
         b3.setPublisher(p1);
-        b3.setPublishDate(pubDate3);
-        b3.addAuthor(AU_JOE_ABERCROMBIE);
-        b3.setNumberInSeries(3.0);
+        b3.setAuthor(AU_JOE_ABERCROMBIE);
+        b3.setSeriesNumber(3.0);
 
-        b4 = new Book();
-        b4.setTitle("Rebecca");
-
-        b5 = new Book();
-        b5.setTitle("Effective Java");
+        b4 = new Book("Rebecca");
+        b5 = new Book("Effective Java");
 
         booklistG = new ArrayList<>();
         booklistG.add(b1);
@@ -82,23 +82,27 @@ class BookDbTest {
         try {
             boolean publisherTableExists = PublisherDb.tableExists(con);
 
-            if (publisherTableExists) {
+            if (publisherTableExists)
                 PublisherDb.dropTable(con);
-            }
 
             PublisherDb.createTable(con);
-            Publisher rp1 = PublisherDb.insert(con, p1);
-            p1.setId(rp1.getId());
-            rp1 = null;
+            PublisherDb.insert(con, p1);
 
-            boolean tableExists = BookDb.tableExists(con);
+            boolean bookSeriesTableExists = BookSeriesDb.tableExists(con);
 
-            if (tableExists) {
+            if (bookSeriesTableExists)
+                BookSeriesDb.dropTable(con);
+
+            BookSeriesDb.createTable(con);
+
+            boolean bookTableExists = BookDb.tableExists(con);
+
+            if (bookTableExists)
                 BookDb.dropTable(con);
-            }
-            BookDb.createTable(con);
-            assertEquals(0, BookDb.queryAll(con).size());
 
+            BookDb.createTable(con);
+
+            assertEquals(0, BookDb.queryAll(con).size());
         } catch (SQLException e) {
             fail(e);
         }
@@ -133,18 +137,19 @@ class BookDbTest {
     void insertSingles() {
         logger.info("Executing test for inserting single record");
 
-        Book qb1 = null;
-        Book qb2 = null;
-        Book qb3 = null;
+        String qb1 = null;
+        String qb2 = null;
+        String qb3 = null;
 
-        Book qb4 = null;
-        Book qb5 = null;
+        String qb4 = null;
+        String qb5 = null;
 
-        List<Book> booklist = null;
+        List<String> bookList = null;
 
         try {
             for (int i = 0; i < booklistG.size(); i++) {
                 BookDb.insert(con, booklistG.get(i));
+                BookDb.update(con, booklistG.get(i).getId(), booklistG.get(i));
             }
 
             qb1 = BookDb.queryById(con, 1);
@@ -154,34 +159,32 @@ class BookDbTest {
             qb4 = BookDb.queryById(con, 4);
             qb5 = BookDb.queryById(con, 5);
 
-            booklist = BookDb.queryAll(con);
+            bookList = BookDb.queryAll(con);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             fail(e);
         }
 
-        for (int i = 0; i < booklist.size(); i++) {
-            Book qb = booklist.get(i);
+        for (int i = 0; i < bookList.size(); i++) {
             Book b = booklistG.get(i);
 
-            logger.info("Book in list: id {} = {}, {}, {}, {}", i, b.getIsbn(), b.getTitle(), b.getPublishDate(), b.getAddedDate());
-            logger.info("Book in db:   id {} = {}, {}, {}, {}", qb.getId(), qb.getIsbn(), qb.getTitle(), qb.getPublishDate(), qb.getAddedDate());
+            logger.info("Book in list:  {}", b.toString());
+            logger.info("Book in db:    {}", bookList.get(i));
         }
 
-        assertEquals(5, booklist.size());
+        assertEquals(5, bookList.size());
 
-        assertEquals(b1.getIsbn(), qb1.getIsbn());
-        assertEquals(b2.getIsbn(), qb2.getIsbn());
-        assertEquals(b3.getIsbn(), qb3.getIsbn());
+        assertEquals(b1.getIsbn(), qb1.split(",")[1]);
+        assertEquals(b2.getIsbn(), qb2.split(",")[1]);
+        assertEquals(b3.getIsbn(), qb3.split(",")[1]);
 
-        assertEquals(b4.getTitle(), qb4.getTitle());
-        assertEquals(b5.getTitle(), qb5.getTitle());
+        assertEquals(b4.getTitle(), qb4.split(",")[3]);
+        assertEquals(b5.getTitle(), qb5.split(",")[3]);
 
     }
 
     /**
-     * Test deleting singles from db
-     * using book id
+     * Test deleting singles from db using book id
      */
     @Test
     @Order(2)
@@ -213,7 +216,7 @@ class BookDbTest {
         logger.info("Executing test for deleting multiple records");
         int rFirst = 0;
         int rAfter = 0;
-        List<Book> booklistBefore = null;
+        List<String> booklistBefore = null;
 
         try {
             booklistBefore = BookDb.queryAll(con);
@@ -221,7 +224,8 @@ class BookDbTest {
 
             // Collect IDs
             for (int i = 0; i < booklistBefore.size(); i++) {
-                idsToDelete[i] = booklistBefore.get(i).getId();
+                String[] parts = booklistBefore.get(i).split(",");
+                idsToDelete[i] = Integer.valueOf(parts[0]);
             }
 
             logger.info("IDs to delete: {}", idsToDelete);
@@ -275,38 +279,41 @@ class BookDbTest {
     @Test
     @Order(5)
     void updateSingle() {
-        List<Book> booklistBefore = null;
-        List<Book> booklistAfter = null;
+        List<String> booklistBefore = null;
+        List<String> booklistAfter = null;
 
         Book nb1 = new Book(b1.getId(),
                 b1.getIsbn(),
-                "",
+                b1.getUuid(),
                 "Something Title",
+                b1.getSeries(),
+                b1.getSeriesNumber(),
                 b1.getPublisher(),
                 b1.getPublishDate(),
                 b1.getAddedDate(),
-                b1.getModifiedDate(),
-                b1.getNumberInSeries());
+                b1.getModifiedDate());
 
         Book nb2 = new Book(b1.getId(),
                 b2.getIsbn(),
-                "",
+                b2.getUuid(),
                 "Another Title",
+                b2.getSeries(),
+                b2.getSeriesNumber(),
                 b2.getPublisher(),
                 b2.getPublishDate(),
                 b2.getAddedDate(),
-                b2.getModifiedDate(),
-                b2.getNumberInSeries());
+                b2.getModifiedDate());
 
         Book nb3 = new Book(b1.getId(),
                 b3.getIsbn(),
-                "",
+                b3.getUuid(),
                 "Boring Title",
+                b3.getSeries(),
+                b3.getSeriesNumber(),
                 b3.getPublisher(),
                 b3.getPublishDate(),
                 b3.getAddedDate(),
-                b3.getModifiedDate(),
-                b3.getNumberInSeries());
+                b3.getModifiedDate());
 
         List<Book> updatedBooks = new ArrayList<>();
         updatedBooks.add(nb1);
@@ -319,7 +326,8 @@ class BookDbTest {
             int[] idsToUpdate = new int[3];
 
             for (int i = 0; i < idsToUpdate.length; i++) {
-                idsToUpdate[i] = booklistBefore.get(i).getId();
+                String[] parts = booklistBefore.get(i).split(",");
+                idsToUpdate[i] = Integer.valueOf(parts[0]);
             }
 
             logger.info("IDs to update: {}", idsToUpdate);
@@ -336,22 +344,22 @@ class BookDbTest {
 
         logger.info("Book database before: \n{}", booklistBefore.get(0));
         logger.info("Book database after: \n{}", booklistAfter.get(0));
-
         assertEquals(booklistBefore.size(), booklistAfter.size());
-        assertEquals(nb1.getIsbn(), booklistAfter.get(0).getIsbn());
-        assertEquals(nb1.getTitle(), booklistAfter.get(0).getTitle());
-        assertEquals(nb1.getNumberInSeries(), booklistAfter.get(0).getNumberInSeries());
-        logger.info("Inserted publisher: {}, queried publisher: {}", nb1.getPublisher().getName(), booklistAfter.get(0).getPublisher().getName());
-        assertEquals(nb1.getPublisher().getName(), booklistAfter.get(0).getPublisher().getName());
-        assertEquals(nb1.getPublishDate(), booklistAfter.get(0).getPublishDate());
-        assertEquals(nb1.getAddedDate(), booklistAfter.get(0).getAddedDate());
-        assertEquals(nb1.getModifiedDate(), booklistAfter.get(0).getModifiedDate());
+
+        String[] parts = booklistAfter.get(0).split(",");
+
+        assertEquals(nb1.getIsbn(), parts[1]);
+        assertEquals(nb1.getUuid(), parts[2]);
+        assertEquals(nb1.getTitle(), parts[3]);
+        assertEquals(String.valueOf(nb1.getSeriesNumber()), parts[6]);
+        assertEquals(nb1.getPublishDate().toString(), parts[9]);
+        assertEquals(nb1.getAddedDate().toString(), parts[10]);
+        assertEquals(nb1.getModifiedDate().toString(), parts[11]);
     }
 
     @Test
     void updateBatch() {
-
-
+        // TODO: test for updating multiple records
     }
 
     /**
@@ -367,7 +375,7 @@ class BookDbTest {
 
     private static void closeConnection() {
         try {
-            DbConnection.closeConnection(con);
+            DbConnection.close(con);
         } catch (SQLException e) {
             fail(e.getMessage());
         }

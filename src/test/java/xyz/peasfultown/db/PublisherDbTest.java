@@ -26,7 +26,7 @@ public class PublisherDbTest {
      */
     @BeforeAll
     static void setup() {
-        logger.info("---Setting up PublisherDb Test---");
+        logger.info("---Starting PublisherDb Test---");
 
         p1 = new Publisher("Harper Collins");
         p2 = new Publisher("Penguin Random House");
@@ -86,9 +86,9 @@ public class PublisherDbTest {
         Publisher insertedPub2 = null;
         Publisher insertedPub3 = null;
 
-        Publisher queriedPub1 = null;
-        Publisher queriedPub2 = null;
-        Publisher queriedPub3 = null;
+        String queriedPub1 = null;
+        String queriedPub2 = null;
+        String queriedPub3 = null;
         try {
             insertedPub1 = PublisherDb.insert(con, p1);
             insertedPub2 = PublisherDb.insert(con, p2);
@@ -101,14 +101,12 @@ public class PublisherDbTest {
             logger.error(e.getMessage());
         }
 
-        assertEquals(p1.getName(), insertedPub1.getName());
-        assertEquals(p2.getName(), insertedPub2.getName());
-        assertEquals(p3.getName(), insertedPub3.getName());
-        assertEquals(p1, queriedPub1, "Queried publisher should be correct");
-        assertNotEquals(p1, queriedPub2, "Queried publisher should not equal " +
-                "a different publisher object");
-        assertEquals(p2, queriedPub2, "Queried publisher should be correct");
-        assertEquals(p3, queriedPub3, "Queried publisher should be correct");
+        assertEquals(p1, insertedPub1);
+        assertEquals(p2, insertedPub2);
+        assertEquals(p3, insertedPub3);
+        assertEquals(p1.getName(), queriedPub1.split(",")[1], "Queried publisher should be correct");
+        assertEquals(p2.getName(), queriedPub2.split(",")[1], "Queried publisher should be correct");
+        assertEquals(p3.getName(), queriedPub3.split(",")[1], "Queried publisher should be correct");
     }
 
     /**
@@ -118,10 +116,10 @@ public class PublisherDbTest {
     @Order(2)
     void getPublisherByName() {
         logger.info("Executing test for getting publisher by name");
-        Publisher queriedPub1 = null;
-        Publisher queriedPub2 = null;
-        Publisher queriedPub3 = null;
-        Publisher queriedPub4 = null;
+        String queriedPub1 = null;
+        String queriedPub2 = null;
+        String queriedPub3 = null;
+        String queriedPub4 = null;
 
         try {
             queriedPub1 = PublisherDb.queryByName(con, p1.getName());
@@ -132,9 +130,10 @@ public class PublisherDbTest {
             logger.error(e.getMessage());
         }
 
-        assertEquals(p1, queriedPub1);
-        assertEquals(p2, queriedPub2);
-        assertEquals(p3, queriedPub3);
+        logger.info("Queried publisher: {}", queriedPub1);
+        assertEquals(p1.getName(), queriedPub1.split(",")[1]);
+        assertEquals(p2.getName(), queriedPub2.split(",")[1]);
+        assertEquals(p3.getName(), queriedPub3.split(",")[1]);
         assertNull(queriedPub4);
     }
 
@@ -150,26 +149,21 @@ public class PublisherDbTest {
         Publisher newPub1 = new Publisher("Pearson Education");
         Publisher newPub2 = new Publisher("Wiley");
 
-        Publisher queriedPub1 = null;
-        Publisher queriedPub2 = null;
-
-        Publisher updatedRow1 = null;
-        Publisher updatedRow2 = null;
+        String updatedRow1 = null;
+        String updatedRow2 = null;
 
         try {
-            updatedRow1 = PublisherDb.updateById(con, 1, newPub1);
-            updatedRow2 = PublisherDb.updateById(con, 2, newPub2);
+            PublisherDb.update(con, 1, newPub1);
+            PublisherDb.update(con, 2, newPub2);
 
-            queriedPub1 = PublisherDb.queryById(con, 1);
-            queriedPub2 = PublisherDb.queryById(con, 2);
+            updatedRow1 = PublisherDb.queryById(con, 1);
+            updatedRow2 = PublisherDb.queryById(con, 2);
         } catch (SQLException e) {
             logger.error(e.getMessage());
         }
 
-        assertEquals(newPub1.getName(), updatedRow1.getName());
-        assertEquals(newPub2.getName(), updatedRow2.getName());
-        assertEquals(newPub1, queriedPub1);
-        assertEquals(newPub2, queriedPub2);
+        assertEquals(newPub1.getName(), updatedRow1.split(",")[1]);
+        assertEquals(newPub2.getName(), updatedRow2.split(",")[1]);
     }
 
     /**
@@ -183,7 +177,7 @@ public class PublisherDbTest {
         try {
             assertEquals(3, PublisherDb.queryAll(con).size());
             assertNotNull(PublisherDb.queryById(con, 1));
-            assertEquals(1, PublisherDb.deleteById(con, 1));
+            PublisherDb.deleteById(con, 1);
             assertNull(PublisherDb.queryById(con, 1));
             assertEquals(2, PublisherDb.queryAll(con).size());
         } catch (SQLException e) {
@@ -224,7 +218,7 @@ public class PublisherDbTest {
 
     static void closeConnection() {
         try {
-            DbConnection.closeConnection(con);
+            DbConnection.close(con);
             logger.info("Connection closed");
         } catch (SQLException e) {
             logger.error(e.getMessage());

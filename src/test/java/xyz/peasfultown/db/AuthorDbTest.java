@@ -82,30 +82,30 @@ public class AuthorDbTest {
     @Order(1)
     void insertSinglesByObject() {
         logger.info("Executing test for inserting single record");
-        int rFirst = 0;
-        int rAfter = 0;
-        List<Author> aulistAfter = null;
+        int sizeFirst = 0;
+        int sizeAfter = 0;
+        List<String> aulistAfter = null;
 
         try {
-            rFirst = AuthorDb.queryAll(con).size();
+            sizeFirst = AuthorDb.queryAll(con).size();
             for (int i = 0; i < authorList.size(); i++) {
                 AuthorDb.insert(con, authorList.get(i));
             }
             aulistAfter = AuthorDb.queryAll(con);
-            rAfter = aulistAfter.size();
+            sizeAfter = aulistAfter.size();
         } catch (SQLException e) {
             logger.error(e.getMessage());
             fail(e);
         }
 
-        logger.info("Number of rows before insertion: {}, number of rows after insertion: {}", rFirst, rAfter);
+        logger.info("Number of rows before insertion: {}, number of rows after insertion: {}", sizeFirst, sizeAfter);
         logger.info("Object in query result: {}", aulistAfter.get(3));
-        assertTrue(rAfter > rFirst, "Number of rows after insertion should be higher " +
+        assertTrue(sizeAfter > sizeFirst, "Number of rows after insertion should be higher " +
                 "than number of rows before insertion.");
         assertNotNull(aulistAfter, "The queried author database should not be null.");
-        assertEquals(authorList.size(), rAfter);
-        assertEquals(authorList.get(1).getName(), aulistAfter.get(1).getName());
-        assertNotEquals(0, aulistAfter.get(3).getId());
+        assertEquals(authorList.size(), sizeAfter);
+        assertEquals(authorList.get(1).toString(), aulistAfter.get(1));
+        assertNotEquals(0, aulistAfter.get(3).toCharArray()[0]);
     }
 
     /**
@@ -119,14 +119,15 @@ public class AuthorDbTest {
         logger.info("Executing test for deleting single records");
         int rFirst = 0;
         int rAfter = 0;
-        List<Author> aulist = null;
+        List<String> aulist = null;
         try {
             aulist = AuthorDb.queryAll(con);
 
             // Fetching the ids
             int[] idsToDelete = new int[aulist.size()];
             for (int i = 0; i < aulist.size(); i++) {
-                idsToDelete[i] = aulist.get(i).getId();
+                String[] parts = aulist.get(i).split(",");
+                idsToDelete[i] = Integer.valueOf(parts[0]);
             }
 
             rFirst = aulist.size();
@@ -157,8 +158,8 @@ public class AuthorDbTest {
         logger.info("Executing test for inserting batch of records");
         int rFirst = 0;
         int rAfter = 0;
-        List<Author> aulist = null;
-        List<Author> aulistAfter = null;
+        List<String> aulist = null;
+        List<String> aulistAfter = null;
 
         try {
             aulist = AuthorDb.queryAll(con);
@@ -185,13 +186,31 @@ public class AuthorDbTest {
     @Order(4)
     void queryById() {
         logger.info("Executing test for getting author by id in table");
-        Author auQueried = null;
+        String auQueried = null;
 
         try {
-            List<Author> aulist = AuthorDb.queryAll(con);
-            auQueried = AuthorDb.queryById(con, aulist.get(0).getId());
+            List<String> aulist = AuthorDb.queryAll(con);
+            auQueried = AuthorDb.queryById(con, Integer.valueOf(aulist.get(0).split(",")[0]));
         } catch (SQLException e) {
             logger.error(e.getMessage());
+            fail(e);
+        }
+
+        logger.info("Author in db: {}", auQueried);
+        assertNotNull(auQueried);
+    }
+
+    @Test
+    @Order(5)
+    void queryByName() {
+        logger.info("Executing test for getting author by name");
+        String auQueried = null;
+
+        try {
+            List<String> aulist = AuthorDb.queryAll(con);
+            auQueried = AuthorDb.queryByName(con, aulist.get(0).split(",")[1]);
+        } catch (SQLException e) {
+            logger.info(e.getMessage());
             fail(e);
         }
 
@@ -203,23 +222,23 @@ public class AuthorDbTest {
      * Test for updating single records in the database by their ids.
      */
     @Test
-    @Order(5)
+    @Order(6)
     void updateSinglesById() {
         logger.info("Executing test for updating single records");
-        List<Author> aulist = null;
+        List<String> aulist = null;
 
 
-        Author auNew1 = null;
-        Author auNew2 = null;
-        Author auNew3 = null;
+        Author updatedAuthor1 = null;
+        Author updatedAuthor2 = null;
+        Author updatedAuthor3 = null;
 
         try {
             aulist = AuthorDb.queryAll(con);
             logger.info("Obj before update: {}", aulist.get(0));
 
-            auNew1 = AuthorDb.updateById(con, aulist.get(0).getId(), "Martin Fowler");
-            auNew2 = AuthorDb.updateById(con, aulist.get(1).getId(), "Harold Abelson");
-            auNew3 = AuthorDb.updateById(con, aulist.get(2).getId(), "Simon Singh");
+            updatedAuthor1 = AuthorDb.updateById(con, Integer.valueOf(aulist.get(0).split(",")[0]), "Martin Fowler");
+            updatedAuthor2 = AuthorDb.updateById(con, Integer.valueOf(aulist.get(1).split(",")[0]), "Harold Abelson");
+            updatedAuthor3 = AuthorDb.updateById(con, Integer.valueOf(aulist.get(2).split(",")[0]), "Simon Singh");
 
             aulist = AuthorDb.queryAll(con);
         } catch (SQLException e) {
@@ -229,21 +248,21 @@ public class AuthorDbTest {
 
         logger.info("Obj after update: {}", aulist.get(0));
 
-        assertEquals("Martin Fowler", auNew1.getName());
-        assertEquals("Harold Abelson", auNew2.getName());
-        assertEquals("Simon Singh", auNew3.getName());
+        assertEquals("Martin Fowler", updatedAuthor1.getName());
+        assertEquals("Harold Abelson", updatedAuthor2.getName());
+        assertEquals("Simon Singh", updatedAuthor3.getName());
     }
 
     /**
      * Test batch deletion by id.
      */
     @Test
-    @Order(6)
+    @Order(7)
     void deleteBatchById() {
         logger.info("Executing test for deleting batch of records");
         int rFirst = 0;
         int rAfter = 0;
-        List<Author> aulist = null;
+        List<String> aulist = null;
 
         try {
             aulist = AuthorDb.queryAll(con);
@@ -252,7 +271,7 @@ public class AuthorDbTest {
 
             // Collect ids
             for (int i = 0; i < aulist.size(); i++) {
-                idsToDelete[i] = aulist.get(i).getId();
+                idsToDelete[i] = Integer.valueOf(aulist.get(i).split(",")[0]);
             }
 
             rFirst = AuthorDb.queryAll(con).size();
