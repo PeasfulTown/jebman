@@ -35,19 +35,19 @@ public class BookTest {
         book1 = new Book("The Blade Itself");
         book1.setIsbn("9780575079793");
         book1.setPublishDate(Book.toTimeStamp(2007, 3, 8));
-        book1.addAuthor(author1);
+        book1.setAuthor(author1);
         book1.setPublisher(publisher1);
 
         book2 = new Book("Before They Are Hanged");
         book2.setIsbn("9780575077881");
         book2.setPublishDate(Book.toTimeStamp(2007, 3, 15));
-        book2.addAuthor(author1);
+        book2.setAuthor(author1);
         book2.setPublisher(publisher1);
 
         book3 = new Book("Last Argument of Kings");
         book3.setIsbn("9780575077904");
         book3.setPublishDate(Book.toTimeStamp(2008, 3, 20));
-        book3.addAuthor(author1);
+        book3.setAuthor(author1);
         book3.setPublisher(publisher1);
 
         // title only
@@ -88,16 +88,16 @@ public class BookTest {
 
     @Test
     void testDefaultNumberInSeries() {
-        assertEquals(1.0, book1.getNumberInSeries());
-        assertEquals(1.0, book2.getNumberInSeries());
-        assertEquals(1.0, book3.getNumberInSeries());
+        assertEquals(1.0, book1.getSeriesNumber());
+        assertEquals(1.0, book2.getSeriesNumber());
+        assertEquals(1.0, book3.getSeriesNumber());
     }
 
     @Test
     void testAuthorsCorrect() {
-        assertEquals(List.of(author1), book1.getAuthors());
-        assertEquals(List.of(author1), book2.getAuthors());
-        assertEquals(List.of(author1), book3.getAuthors());
+        assertEquals(author1, book1.getAuthors());
+        assertEquals(author1, book2.getAuthors());
+        assertEquals(author1, book3.getAuthors());
     }
 
     @Test
@@ -115,21 +115,21 @@ public class BookTest {
         newBook1.setId(1);
         newBook1.setIsbn("9780575079793");
         newBook1.setPublishDate(Book.toTimeStamp(2007, 3, 8));
-        newBook1.addAuthor(author1);
+        newBook1.setAuthor(author1);
         newBook1.setPublisher(publisher1);
 
         Book newBook2 = new Book("Before They Are Hanged");
         newBook2.setId(2);
         newBook2.setIsbn("9780575077881");
         newBook2.setPublishDate(Book.toTimeStamp(2007, 3, 15));
-        newBook2.addAuthor(author1);
+        newBook2.setAuthor(author1);
         newBook2.setPublisher(publisher1);
 
         Book newBook3 = new Book("Last Argument of Kings");
         newBook3.setId(3);
         newBook3.setIsbn("9780575077904");
         newBook3.setPublishDate(Book.toTimeStamp(2008, 3, 20));
-        newBook3.addAuthor(author1);
+        newBook3.setAuthor(author1);
         newBook3.setPublisher(publisher1);
 
         assertTrue(newBook1.equals(book1), "Objects should be equal");
