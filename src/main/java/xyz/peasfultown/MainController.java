@@ -87,7 +87,7 @@ public class MainController {
         String[] parts = file.getFileName().toString().split("\\.");
 
         if (parts.length < 2) {
-            throw new IOException("Unable to determine filetype.");
+            throw new IOException(String.format("Unable to determine %s filetype.", file.getFileName()));
         }
         HashMap<String,String> metadata;
 
@@ -119,15 +119,12 @@ public class MainController {
 
         Path destDir = this.mainPath
                 .resolve(book.getAuthors().getName());
-
         if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
             Files.createDirectory(destDir);
         }
-
         Path target = destDir.resolve(String.format("%s.%s",
                 book.getTitle(),
                 parts[parts.length-1]));
-
         Files.copy(file, target);
 
         try (Connection con = DbConnection.getConnection(this.dbPath.toString())){

@@ -27,18 +27,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MainControllerTest {
     private static final Logger logger = LoggerFactory.getLogger(MainControllerTest.class);
-    // Main test directory
     private static final Path mainPath = Path.of(new StringBuilder(System.getProperty("java.io.tmpdir"))
             .append(System.getProperty("file.separator")).append("jebman-library").toString());
     private static final Path dbPath = mainPath.resolve("metadata.db");
     static MainController mc = null;
 
-    @BeforeAll
-    static void setup() {
-    }
-
     @AfterEach
-    void cleanup() {
+    void cleanupEach() {
         cleanupPath(mainPath);
     }
 
@@ -101,10 +96,9 @@ public class MainControllerTest {
     }
 
     @Test
-    void insertPDFInsertsCorrectRecord() {
+    void insertPDFInsertsCorrectRecords() {
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
-        assertTrue((Files.exists(file)));
 
         try {
             MainController mc = new MainController(mainPath.getParent());
@@ -116,21 +110,27 @@ public class MainControllerTest {
 
         try (Connection con = DbConnection.getConnection(dbPath.toString())){
             String bookRecord = BookDb.queryByTitle(con, "dummy");
-            logger.info("Queried record: {}", bookRecord);
+            String authorRecord = AuthorDb.queryByName(con, "Evangelos Vlachogiannis");
+            String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, Integer.parseInt(bookRecord.split(",")[0]));
+
+            logger.info("Book record: {}", bookRecord);
+            logger.info("Author record: {}", authorRecord);
+            logger.info("Link record: {}", bookAuthorLinkRecord);
+
             assertNotNull(bookRecord);
+            assertNotNull(authorRecord);
+            assertNotNull(bookAuthorLinkRecord);
+            assertEquals(Integer.parseInt(authorRecord.split(",")[0]), Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
         } catch (SQLException e) {
             logger.error("Failed to query book record.", e);
             fail();
         }
-
     }
 
     @Test
     void insertEpubCopiesFileToMainPath() {
-        // TODO: check author record
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
-        assertTrue((Files.exists(file)));
 
         try {
             MainController mc = new MainController(mainPath.getParent());
@@ -143,12 +143,11 @@ public class MainControllerTest {
         Path expectedPath = mainPath.resolve(new StringBuilder("Mary Wollstonecraft Shelley")
                 .append(System.getProperty("file.separator"))
                 .append("Frankenstein.epub").toString());
-
         assertTrue(Files.exists(expectedPath), "File expected at " + expectedPath);
     }
 
     @Test
-    void insertEpubInsertsCorrectRecord() {
+    void insertEpubInsertsCorrectRecords() {
         // TODO: check author record
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
@@ -168,13 +167,15 @@ public class MainControllerTest {
             String authorRecord = AuthorDb.queryByName(con, "Mary Wollstonecraft Shelley");
             String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, 1);
 
-            logger.info("Queried book record: {}", bookRecord);
-            logger.info("Queried publisher record: {}", publisherRecord);
+            logger.info("Book record: {}", bookRecord);
+            logger.info("Publisher record: {}", publisherRecord);
+            logger.info("Link record: {}", bookAuthorLinkRecord);
+
             assertNotNull(bookRecord);
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
-            assertEquals(1, Integer.valueOf(bookRecord.split(",")[6]));
             assertNotNull(bookAuthorLinkRecord);
+            assertEquals(1, Integer.valueOf(bookRecord.split(",")[6]));
             assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[1]));
             assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[2]));
         } catch (SQLException e) {
