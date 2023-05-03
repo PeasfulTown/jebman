@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 /**
  * TODO: upon instantialization, check program's main path for the SQLite database file (metadata.db) and load it.
- * TODO: get rid of the `isTest` stuff, make the caller provide the path, this class doesn't need to be doing all that stuff.
  */
 public class MainController {
     private static final String DEFAULT_DB_PATH = new StringBuilder(System.getProperty("user.home"))
@@ -36,7 +35,7 @@ public class MainController {
     private List<Book> books;
     private List<Publisher> publishers;
     private List<Author> authors;
-    private List<Series> bookseries;
+    private List<Series> series;
 
     /**
      * Default constructor creates a directory for the program at the user's `Documents` directory.
@@ -85,7 +84,6 @@ public class MainController {
     public void insertBook(Path file) throws SQLException, IOException, XMLStreamException {
         // TODO: validate file format
         // TODO: insert author record if not already present
-        // TODO: insert book-author record to joint table
         String[] parts = file.getFileName().toString().split("\\.");
 
         if (parts.length < 2) {
@@ -93,34 +91,30 @@ public class MainController {
         }
         HashMap<String,String> metadata;
 
+        Book book = new Book();
         switch (parts[parts.length - 1]) {
             case "epub":
                 metadata = MetaReader.getEpubMetadata(file);
+                book.setIsbn(metadata.getOrDefault("isbn", ""));
+                book.setUuid(metadata.getOrDefault("uuid", ""));
+                book.setTitle(metadata.getOrDefault("title", parts[0]));
+                if (metadata.get("publisher") != null)
+                    book.setPublisher(new Publisher(metadata.get("publisher")));
+                if (metadata.get("creator") != null)
+                    book.setAuthor(new Author(metadata.get("creator")));
+                if (metadata.get("date") != null)
+                    book.setPublishDate(MetaReader.parseDate(metadata.get("date")));
+                if (metadata.get("publisher") != null)
+                    book.setPublisher(new Publisher(metadata.get("publisher")));
                 break;
             case "pdf":
                 metadata = MetaReader.getPDFMetadata(file);
+                book.setTitle(metadata.getOrDefault("title", parts[0]));
+                book.setAuthor(new Author(metadata.getOrDefault("author", "Unknown")));
+                book.setPublishDate(MetaReader.parseDate(metadata.getOrDefault("date", Instant.now().toString())));
                 break;
             default:
                 throw new IOException("Unable to add ebook, possibly unsupported file type.");
-        }
-
-        Book book = new Book();
-        if (parts[parts.length - 1].equals("epub")) {
-            book.setIsbn(metadata.getOrDefault("isbn", ""));
-            book.setUuid(metadata.getOrDefault("uuid", ""));
-            book.setTitle(metadata.getOrDefault("title", parts[0]));
-            if (metadata.get("publisher") != null)
-                book.setPublisher(new Publisher(metadata.get("publisher")));
-            if (metadata.get("creator") != null)
-                book.setAuthor(new Author(metadata.get("creator")));
-            if (metadata.get("date") != null)
-                book.setPublishDate(MetaReader.parseDate(metadata.get("date")));
-            if (metadata.get("publisher") != null)
-                book.setPublisher(new Publisher(metadata.get("publisher")));
-        } else if (parts[parts.length - 1].equals("pdf")) {
-            book.setTitle(metadata.getOrDefault("title", parts[0]));
-            book.setAuthor(new Author(metadata.getOrDefault("author", "Unknown")));
-            book.setPublishDate(MetaReader.parseDate(metadata.getOrDefault("date", Instant.now().toString())));
         }
 
         Path destDir = this.mainPath
