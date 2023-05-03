@@ -11,18 +11,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.StringJoiner;
 
-public class BookSeries {
+public class Series {
     private int id;
     private String name;
     private List<Book> books;
 
-    public BookSeries(String name) {
+    public Series(String name) {
         this.name = name;
         this.books = new ArrayList<>();
     }
 
-    public BookSeries(int id, String name) {
+    public Series(int id, String name) {
         this(name);
         this.id = id;
     }
@@ -54,7 +55,7 @@ public class BookSeries {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        BookSeries that = (BookSeries) o;
+        Series that = (Series) o;
 
         return new EqualsBuilder().append(name, that.name).isEquals();
     }
@@ -88,9 +89,9 @@ public class BookSeries {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("id", id)
-                .append("name", name)
+        return new StringJoiner(",")
+                .add(String.valueOf(this.getId()))
+                .add(this.getName())
                 .toString();
     }
 }

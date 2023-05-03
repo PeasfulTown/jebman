@@ -8,7 +8,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.peasfultown.base.Book;
-import xyz.peasfultown.base.BookSeries;
+import xyz.peasfultown.base.Series;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,12 +19,12 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 
 @TestMethodOrder(OrderAnnotation.class)
-public class BookSeriesDbTest {
-    private static final Logger logger = LoggerFactory.getLogger(BookSeriesDbTest.class);
+public class SeriesDbTest {
+    private static final Logger logger = LoggerFactory.getLogger(SeriesDbTest.class);
     private static Connection con;
 
     private static Book b1, b2, b3;
-    private static BookSeries bs1, bs2, bs3;
+    private static Series bs1, bs2, bs3;
 
     /**
      * Set-ups and Tear-downs
@@ -42,20 +42,20 @@ public class BookSeriesDbTest {
         b3 = new Book();
         b3.setTitle("Last Argument Of Kings");
 
-        bs1 = new BookSeries("The First Law");
-        bs2 = new BookSeries("Outlander");
-        bs3 = new BookSeries("Teixcalaan");
+        bs1 = new Series("The First Law");
+        bs2 = new Series("Outlander");
+        bs3 = new Series("Teixcalaan");
 
         establishConnection();
 
         try {
-            boolean tableExists = BookSeriesDb.tableExists(con);
+            boolean tableExists = SeriesDb.tableExists(con);
             logger.info("Table exists: {}", tableExists);
             if (tableExists) {
-                BookSeriesDb.dropTable(con);
+                SeriesDb.dropTable(con);
             }
             logger.info("Creating table");
-            BookSeriesDb.createTable(con);
+            SeriesDb.createTable(con);
         } catch (SQLException e) {
             logger.error(e.getMessage());
         }
@@ -80,7 +80,7 @@ public class BookSeriesDbTest {
 
         try {
             logger.info("Dropping table");
-            BookSeriesDb.dropTable(con);
+            SeriesDb.dropTable(con);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             fail(e);
@@ -97,26 +97,28 @@ public class BookSeriesDbTest {
     @Order(1)
     void testInsert() {
         logger.info("Executing test for inserting and fetching by id");
-        BookSeries qbs1 = null;
-        BookSeries qbs2 = null;
-        BookSeries qbs3 = null;
+        String qbs1 = null;
+        String qbs2 = null;
+        String qbs3 = null;
 
         try {
-            BookSeriesDb.insert(con, bs1);
-            BookSeriesDb.insert(con, bs2);
-            BookSeriesDb.insert(con, bs3);
+            SeriesDb.insert(con, bs1);
+            SeriesDb.insert(con, bs2);
+            SeriesDb.insert(con, bs3);
 
-            qbs1 = BookSeriesDb.getBookSeriesById(con, 1);
-            qbs2 = BookSeriesDb.getBookSeriesById(con, 2);
-            qbs3 = BookSeriesDb.getBookSeriesById(con, 3);
+            qbs1 = SeriesDb.queryById(con, 1);
+            qbs2 = SeriesDb.queryById(con, 2);
+            qbs3 = SeriesDb.queryById(con, 3);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             fail(e);
         }
 
-        assertEquals(bs1, qbs1);
-        assertEquals(bs2, qbs2);
-        assertEquals(bs3, qbs3);
+        logger.info("Object: {}", bs1);
+        logger.info("Record: {}", qbs1);
+        assertEquals(bs1.toString(), qbs1);
+        assertEquals(bs2.toString(), qbs2);
+        assertEquals(bs3.toString(), qbs3);
     }
 
     @Test
@@ -124,45 +126,47 @@ public class BookSeriesDbTest {
     void updateById() {
         logger.info("Executing test for updating book series record by id");
 
-        List<BookSeries> bslistBefore = null;
-        List<BookSeries> bslistAfter = null;
+        List<String> bslistBefore = null;
+        List<String> bslistAfter = null;
 
         int[] idsToUpdate = null;
 
-        BookSeries ubs1 = new BookSeries("New Book Series");
-        BookSeries ubs2 = new BookSeries("Some Other Book Series");
+        Series ubs1 = new Series("New Book Series");
+        Series ubs2 = new Series("Some Other Book Series");
 
-        List<BookSeries> ubslist = new ArrayList<>();
+        List<Series> ubslist = new ArrayList<>();
         ubslist.add(ubs1);
         ubslist.add(ubs2);
 
-        List<BookSeries> ubslistRet = new ArrayList<>();
+        List<Series> ubslistRet = new ArrayList<>();
 
         try {
-            bslistBefore = BookSeriesDb.queryAll(con);
+            bslistBefore = SeriesDb.queryAll(con);
 
             idsToUpdate = new int[bslistBefore.size()];
 
             for (int i = 0; i < bslistBefore.size(); i++) {
-                idsToUpdate[i] = bslistBefore.get(i).getId();
+                idsToUpdate[i] = Integer.valueOf(bslistBefore.get(i).split(",")[0]);
             }
 
             for (int i = 0; i < ubslist.size(); i++) {
-                ubslistRet.add(BookSeriesDb.update(con, idsToUpdate[i], ubslist.get(i)));
+                ubslistRet.add(SeriesDb.update(con, idsToUpdate[i], ubslist.get(i)));
+                ubslist.get(i).setId(idsToUpdate[i]);
             }
 
-            bslistAfter = BookSeriesDb.queryAll(con);
+            bslistAfter = SeriesDb.queryAll(con);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             fail(e);
         }
 
-        logger.info("Record before update: {}, after update: {}", bslistBefore.get(0), bslistAfter.get(0));
-        assertEquals(ubslist.get(0).getName(), bslistAfter.get(0).getName());
-        assertEquals(ubslist.get(1).getName(), bslistAfter.get(1).getName());
+        logger.info("Record before update: {}", bslistBefore.get(0));
+        logger.info("Record after update: {}", bslistAfter.get(0));
+        assertEquals(ubslist.get(0).getName(), bslistAfter.get(0).split(",")[1]);
+        assertEquals(ubslist.get(1).getName(), bslistAfter.get(1).split(",")[1]);
         assertEquals(2, ubslistRet.size());
-        assertEquals(bslistAfter.get(0), ubslistRet.get(0));
-        assertEquals(bslistAfter.get(1), ubslistRet.get(1));
+        assertEquals(bslistAfter.get(0).toString(), ubslistRet.get(0).toString());
+        assertEquals(bslistAfter.get(1).toString(), ubslistRet.get(1).toString());
     }
 
     /**

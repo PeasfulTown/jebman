@@ -8,7 +8,7 @@ package xyz.peasfultown;
 
 import xyz.peasfultown.base.Author;
 import xyz.peasfultown.base.Book;
-import xyz.peasfultown.base.BookSeries;
+import xyz.peasfultown.base.Series;
 import xyz.peasfultown.base.Publisher;
 import xyz.peasfultown.db.*;
 
@@ -24,7 +24,6 @@ import java.util.HashMap;
 
 /**
  * TODO: upon instantialization, check program's main path for the SQLite database file (metadata.db) and load it.
- *
  * TODO: get rid of the `isTest` stuff, make the caller provide the path, this class doesn't need to be doing all that stuff.
  */
 public class MainController {
@@ -37,7 +36,7 @@ public class MainController {
     private List<Book> books;
     private List<Publisher> publishers;
     private List<Author> authors;
-    private List<BookSeries> bookseries;
+    private List<Series> bookseries;
 
     /**
      * Default constructor creates a directory for the program at the user's `Documents` directory.
@@ -176,8 +175,8 @@ public class MainController {
                 AuthorDb.createTable(con);
             }
 
-            if (!BookSeriesDb.tableExists(con)) {
-                BookSeriesDb.createTable(con);
+            if (!SeriesDb.tableExists(con)) {
+                SeriesDb.createTable(con);
             }
 
             if (!BookDb.tableExists(con)) {
@@ -187,8 +186,6 @@ public class MainController {
             if (!BookAuthorLinkDb.tableExists(con)) {
                 BookAuthorLinkDb.createTable(con);
             }
-
-            // TODO: book-author link table
         } catch (SQLException e) {
             throw new SQLException ("Failed to create tables for the main controller.", e);
         }

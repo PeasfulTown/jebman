@@ -12,8 +12,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.StringJoiner;
 
 public class Book {
@@ -21,7 +19,7 @@ public class Book {
     private String isbn;
     private String uuid;
     private String title;
-    private BookSeries series;
+    private Series series;
     private double seriesNumber;
     private Publisher publisher;
     private Instant publishDate;
@@ -53,7 +51,7 @@ public class Book {
         this.publishDate = publishDate.truncatedTo(ChronoUnit.DAYS);
     }
 
-    public Book(int id, String isbn, String uuid, String title, BookSeries series, Double seriesNumber, Publisher publisher,
+    public Book(int id, String isbn, String uuid, String title, Series series, Double seriesNumber, Publisher publisher,
                 Instant publishDate, Instant addedDate, Instant modifiedDate) {
         this(isbn, uuid, title, publishDate);
         this.id = id;
@@ -92,11 +90,11 @@ public class Book {
         return title;
     }
 
-    public void setSeries(BookSeries series) {
+    public void setSeries(Series series) {
         this.series = series;
     }
 
-    public BookSeries getSeries() {
+    public Series getSeries() {
         return this.series;
     }
 

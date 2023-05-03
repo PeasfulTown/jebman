@@ -15,11 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.peasfultown.db.BookDb;
 
-public class BookSeriesTest {
-    private static final Logger logger = LoggerFactory.getLogger(BookSeriesTest.class);
+public class SeriesTest {
+    private static final Logger logger = LoggerFactory.getLogger(SeriesTest.class);
 
     private Book b0, b1, b2;
-    private BookSeries bookseries0;
+    private Series bookseries0;
     BookDb bookdb;
 
     @BeforeEach
@@ -29,11 +29,11 @@ public class BookSeriesTest {
         b1 = new Book("1 Outlander");
         b2 = new Book("2 Dragonfly in Amber");
 
-        b0.setNumberInSeries(0.5);
-        b1.setNumberInSeries(1);
-        b2.setNumberInSeries(2);
+        b0.setSeriesNumber(0.5);
+        b1.setSeriesNumber(1);
+        b2.setSeriesNumber(2);
 
-        bookseries0 = new BookSeries("Outlander");
+        bookseries0 = new Series("Outlander");
         bookseries0.addBook(b0);
         bookseries0.addBook(b1);
         bookseries0.addBook(b2);
@@ -96,7 +96,7 @@ public class BookSeriesTest {
     void addingBookIncrementsBookSeriesBooksArray() {
         logger.info("executing test for book increment after adding book");
 
-        BookSeries bookseries1 = new BookSeries("Outlander");
+        Series bookseries1 = new Series("Outlander");
         int numberOfBooks2 = bookseries1.getNumberOfBooks();
         assertEquals(0, numberOfBooks2, "number of books should have been 0");
         bookseries1.addBook(new Book("Outlander"));
@@ -110,12 +110,12 @@ public class BookSeriesTest {
     @Test
     void addingBookStoresCorrectBookObjectInformation() {
         logger.info("executing test for adding book correctly");
-        BookSeries bookseries1 = new BookSeries("Outlander");
+        Series bookseries1 = new Series("Outlander");
         Book bAlt0 = new Book("Outlander"),
             bAlt1 = new Book("Dragonfly in Amber");
 
-        bAlt0.setNumberInSeries(1);
-        bAlt1.setNumberInSeries(2);
+        bAlt0.setSeriesNumber(1);
+        bAlt1.setSeriesNumber(2);
 
         bookseries1.addBook(bAlt0);
         bookseries1.addBook(bAlt1);

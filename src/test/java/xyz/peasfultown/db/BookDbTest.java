@@ -88,12 +88,12 @@ class BookDbTest {
             PublisherDb.createTable(con);
             PublisherDb.insert(con, p1);
 
-            boolean bookSeriesTableExists = BookSeriesDb.tableExists(con);
+            boolean bookSeriesTableExists = SeriesDb.tableExists(con);
 
             if (bookSeriesTableExists)
-                BookSeriesDb.dropTable(con);
+                SeriesDb.dropTable(con);
 
-            BookSeriesDb.createTable(con);
+            SeriesDb.createTable(con);
 
             boolean bookTableExists = BookDb.tableExists(con);
 
