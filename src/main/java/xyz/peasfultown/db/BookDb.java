@@ -47,7 +47,7 @@ public class BookDb {
             .append("   CONSTRAINT uq_books_t UNIQUE")
             .append("   CONSTRAINT df_books_t DEFAULT \"Unknown\",")
             .append("series_id INTEGER")
-            .append("   CONSTRAINT fk_books_sid REFERENCES bookseries (id),")
+            .append("   CONSTRAINT fk_books_sid REFERENCES series (id),")
             .append("series_number REAL")
             .append("   NOT NULL")
             .append("   CONSTRAINT df_books_snum DEFAULT 1.0,")
@@ -97,7 +97,7 @@ public class BookDb {
             .append("FROM books B ")
             .append("   LEFT JOIN publishers P ")
             .append("       ON B.publisher_id = P.id")
-            .append("   LEFT JOIN bookseries S ")
+            .append("   LEFT JOIN series S ")
             .append("       ON B.series_id = S.id);")
             .toString();
 
@@ -113,14 +113,14 @@ public class BookDb {
             .append("FROM books B ")
             .append("LEFT OUTER JOIN publishers P ")
             .append("   ON B.publisher_id = P.id ")
-            .append("LEFT OUTER JOIN bookseries S ")
+            .append("LEFT OUTER JOIN series S ")
             .append("   ON B.series_id = S.id ) ")
             .append("WHERE id=?;")
             .toString();
 
     /**
      * Query all books in the database, this method executes the query all records in the `books` table joined with the
-     * `publishers` and the `bookseries` table.
+     * `publishers` and the `series` table.
      * <p>
      * The format of each record string:
      * id,isbn,uuid,title,series_id,series_name,series_number,publisher_id,publisher_name,date_published,date_added,date_modified

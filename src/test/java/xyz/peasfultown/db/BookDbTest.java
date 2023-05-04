@@ -13,24 +13,23 @@ import xyz.peasfultown.base.Author;
 import xyz.peasfultown.base.Book;
 import xyz.peasfultown.base.Publisher;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(OrderAnnotation.class)
 class BookDbTest {
     private static final Logger logger = LoggerFactory.getLogger(BookDbTest.class);
-    private static final Author AU_JOE_ABERCROMBIE = new Author("Joe Abercrombie");
-    private static Connection con;
-    private static List<Book> booklistG;
+    private static List<Book> bookListOrig;
     private static Book b1, b2, b3, b4, b5;
-    private static Publisher p1;
-    private static Instant pubDate1, pubDate2, pubDate3;
-
     /**
      * Set-ups and Tear-downs
      */
@@ -38,25 +37,25 @@ class BookDbTest {
     static void setup() {
         logger.info("---SQLBookTest Setup---");
 
-        p1 = new Publisher("Gollancz");
+        Publisher p1 = new Publisher("Gollancz");
 
-        pubDate1 = Book.toTimeStamp(2007, 3, 8);
-        pubDate2 = Book.toTimeStamp(2007, 3, 15);
-        pubDate3 = Book.toTimeStamp(2008, 3, 20);
-
+        Author author = new Author("Joe Abercrombie");
+        Instant pubDate1 = Book.toTimeStamp(2007, 3, 8);
+        Instant pubDate2 = Book.toTimeStamp(2007, 3, 15);
+        Instant pubDate3 = Book.toTimeStamp(2008, 3, 20);
         b1 = new Book("9780575079793",
                 "",
                 "The Blade Itself",
                 pubDate1);
         b1.setPublisher(p1);
-        b1.setAuthor(AU_JOE_ABERCROMBIE);
+        b1.setAuthor(author);
 
         b2 = new Book("9780575077881",
                 "",
                 "Before They Are Hanged",
                 pubDate2);
         b2.setPublisher(p1);
-        b2.setAuthor(AU_JOE_ABERCROMBIE);
+        b2.setAuthor(author);
         b2.setSeriesNumber(2.0);
 
         b3 = new Book("9780575077904",
@@ -64,22 +63,20 @@ class BookDbTest {
                 "Last Argument of Kings",
                 pubDate3);
         b3.setPublisher(p1);
-        b3.setAuthor(AU_JOE_ABERCROMBIE);
+        b3.setAuthor(author);
         b3.setSeriesNumber(3.0);
 
         b4 = new Book("Rebecca");
         b5 = new Book("Effective Java");
 
-        booklistG = new ArrayList<>();
-        booklistG.add(b1);
-        booklistG.add(b2);
-        booklistG.add(b3);
-        booklistG.add(b4);
-        booklistG.add(b5);
+        bookListOrig = new ArrayList<>();
+        bookListOrig.add(b1);
+        bookListOrig.add(b2);
+        bookListOrig.add(b3);
+        bookListOrig.add(b4);
+        bookListOrig.add(b5);
 
-        establishConnection();
-
-        try {
+        try (Connection con = DbConnection.getTestConnection()) {
             boolean publisherTableExists = PublisherDb.tableExists(con);
 
             if (publisherTableExists)
@@ -88,12 +85,12 @@ class BookDbTest {
             PublisherDb.createTable(con);
             PublisherDb.insert(con, p1);
 
-            boolean bookSeriesTableExists = BookSeriesDb.tableExists(con);
+            boolean bookSeriesTableExists = SeriesDb.tableExists(con);
 
             if (bookSeriesTableExists)
-                BookSeriesDb.dropTable(con);
+                SeriesDb.dropTable(con);
 
-            BookSeriesDb.createTable(con);
+            SeriesDb.createTable(con);
 
             boolean bookTableExists = BookDb.tableExists(con);
 
@@ -106,23 +103,19 @@ class BookDbTest {
         } catch (SQLException e) {
             fail(e);
         }
-
-        closeConnection();
-    }
-
-    @BeforeEach
-    void setupBeforeEach() {
-        establishConnection();
-    }
-
-    @AfterEach
-    void teardownAfterEach() {
-        closeConnection();
     }
 
     @AfterAll
     static void teardown() {
-        closeConnection();
+        Path dbFile = Path.of(new StringJoiner("/")
+                .add(System.getProperty("java.io.tmpdir"))
+                .add("test-metadata.db")
+                .toString());
+        try {
+            Files.delete(dbFile);
+        } catch (IOException e) {
+            logger.error("Failed to clean up db file", e);
+        }
     }
 
     /**
@@ -130,56 +123,39 @@ class BookDbTest {
      * querying them using book id in the db
      * <p>
      * Inserting rows into sqlite table should also add
-     * objects into the bookdb internal list object
+     * objects into the BookDb internal list object
      */
     @Test
     @Order(1)
     void insertSingles() {
         logger.info("Executing test for inserting single record");
 
-        String qb1 = null;
-        String qb2 = null;
-        String qb3 = null;
-
-        String qb4 = null;
-        String qb5 = null;
-
-        List<String> bookList = null;
-
-        try {
-            for (int i = 0; i < booklistG.size(); i++) {
-                BookDb.insert(con, booklistG.get(i));
-                BookDb.update(con, booklistG.get(i).getId(), booklistG.get(i));
+        try (Connection con = DbConnection.getTestConnection()) {
+            for (int i = 0; i < bookListOrig.size(); i++) {
+                BookDb.insert(con, bookListOrig.get(i));
+                BookDb.update(con, bookListOrig.get(i).getId(), bookListOrig.get(i));
             }
 
-            qb1 = BookDb.queryById(con, 1);
-            qb2 = BookDb.queryById(con, 2);
-            qb3 = BookDb.queryById(con, 3);
+            String qb1 = BookDb.queryById(con, 1);
+            String qb2 = BookDb.queryById(con, 2);
+            String qb3 = BookDb.queryById(con, 3);
 
-            qb4 = BookDb.queryById(con, 4);
-            qb5 = BookDb.queryById(con, 5);
+            String qb4 = BookDb.queryById(con, 4);
+            String qb5 = BookDb.queryById(con, 5);
 
-            bookList = BookDb.queryAll(con);
+            List<String> bookList = BookDb.queryAll(con);
+
+            assertEquals(5, bookList.size());
+
+            assertEquals(b1.getIsbn(), qb1.split(",")[1]);
+            assertEquals(b2.getIsbn(), qb2.split(",")[1]);
+            assertEquals(b3.getIsbn(), qb3.split(",")[1]);
+
+            assertEquals(b4.getTitle(), qb4.split(",")[3]);
+            assertEquals(b5.getTitle(), qb5.split(",")[3]);
         } catch (SQLException e) {
-            logger.error(e.getMessage());
             fail(e);
         }
-
-        for (int i = 0; i < bookList.size(); i++) {
-            Book b = booklistG.get(i);
-
-            logger.info("Book in list:  {}", b.toString());
-            logger.info("Book in db:    {}", bookList.get(i));
-        }
-
-        assertEquals(5, bookList.size());
-
-        assertEquals(b1.getIsbn(), qb1.split(",")[1]);
-        assertEquals(b2.getIsbn(), qb2.split(",")[1]);
-        assertEquals(b3.getIsbn(), qb3.split(",")[1]);
-
-        assertEquals(b4.getTitle(), qb4.split(",")[3]);
-        assertEquals(b5.getTitle(), qb5.split(",")[3]);
 
     }
 
@@ -190,20 +166,17 @@ class BookDbTest {
     @Order(2)
     void deleteSingleById() {
         logger.info("Executing test for deleting single record");
-        int rFirst = 0;
-        int rAfter = 0;
-
-        try {
-            rFirst = BookDb.queryAll(con).size();
+        try (Connection con = DbConnection.getTestConnection()) {
+            int rFirst = BookDb.queryAll(con).size();
             BookDb.deleteById(con, 1);
-            rAfter = BookDb.queryAll(con).size();
+            int rAfter = BookDb.queryAll(con).size();
+
+            logger.info("Number of rows before deletion: {}, number of rows after deletion: {}", rFirst, rAfter);
+            assertTrue(rFirst > rAfter);
+            assertEquals(4, rAfter);
         } catch (SQLException e) {
             fail(e);
         }
-
-        logger.info("Number of rows before deletion: {}, number of rows after deletion: {}", rFirst, rAfter);
-        assertTrue(rFirst > rAfter);
-        assertEquals(4, rAfter);
     }
 
     /**
@@ -214,35 +187,25 @@ class BookDbTest {
     @Order(3)
     void deleteBatchById() {
         logger.info("Executing test for deleting multiple records");
-        int rFirst = 0;
-        int rAfter = 0;
-        List<String> booklistBefore = null;
-
-        try {
-            booklistBefore = BookDb.queryAll(con);
-            int[] idsToDelete = new int[booklistBefore.size()];
-
-            // Collect IDs
-            for (int i = 0; i < booklistBefore.size(); i++) {
-                String[] parts = booklistBefore.get(i).split(",");
-                idsToDelete[i] = Integer.valueOf(parts[0]);
+        try (Connection con = DbConnection.getTestConnection()) {
+            List<String> bookListBefore = BookDb.queryAll(con);
+            int[] idsToDelete = new int[bookListBefore.size()];
+            // Collect all IDs to delete
+            for (int i = 0; i < bookListBefore.size(); i++) {
+                String[] parts = bookListBefore.get(i).split(",");
+                idsToDelete[i] = Integer.parseInt(parts[0]);
             }
-
             logger.info("IDs to delete: {}", idsToDelete);
-
-            rFirst = BookDb.queryAll(con).size();
-            // Actual
+            int rFirst = BookDb.queryAll(con).size();
             BookDb.deleteByIds(con, idsToDelete);
-
-            rAfter = BookDb.queryAll(con).size();
+            int rAfter = BookDb.queryAll(con).size();
+            logger.info("Rows before batch delete: {}, rows after batch delete: {}", rFirst, rAfter);
+            assertTrue(rFirst > rAfter, "Number of rows before deletion should be higher than the number" +
+                    "of rows after deletion.");
+            assertEquals(0, rAfter);
         } catch (SQLException e) {
             fail(e);
         }
-
-        logger.info("Rows before batch delete: {}, rows after batch delete: {}", rFirst, rAfter);
-        assertTrue(rFirst > rAfter, "Number of rows before deletion should be higher than the number" +
-                "of rows after deletion.");
-        assertEquals(0, rAfter);
     }
 
     /**
@@ -253,27 +216,27 @@ class BookDbTest {
     @Order(4)
     void insertBatch() {
         logger.info("Executing test for inserting multiple records");
-        List<Book> booklist = new ArrayList<>();
-        booklist.add(b1);
-        booklist.add(b2);
-        booklist.add(b3);
-        booklist.add(b4);
-        booklist.add(b5);
 
-        int rFirst = 0;
-        int rAfter = 0;
+        try (Connection con = DbConnection.getTestConnection()) {
+            List<Book> booklist = new ArrayList<>();
 
-        try {
-            rFirst = BookDb.queryAll(con).size();
+            booklist.add(b1);
+            booklist.add(b2);
+            booklist.add(b3);
+            booklist.add(b4);
+            booklist.add(b5);
+
+            int rFirst = BookDb.queryAll(con).size();
             BookDb.insert(con, booklist);
-            rAfter = BookDb.queryAll(con).size();
+            int rAfter = BookDb.queryAll(con).size();
+
+            logger.info("Number of rows before insert: {}, number of rows after insert: {}", rFirst, rAfter);
+            assertTrue(rFirst < rAfter);
+            assertEquals(booklist.size(), rAfter);
         } catch (SQLException e) {
             fail(e);
         }
 
-        logger.info("Number of rows before insert: {}, number of rows after insert: {}", rFirst, rAfter);
-        assertTrue(rFirst < rAfter);
-        assertEquals(booklist.size(), rAfter);
     }
 
     @Test
@@ -320,14 +283,14 @@ class BookDbTest {
         updatedBooks.add(nb2);
         updatedBooks.add(nb3);
 
-        try {
+        try (Connection con = DbConnection.getTestConnection()) {
             booklistBefore = BookDb.queryAll(con);
 
             int[] idsToUpdate = new int[3];
 
             for (int i = 0; i < idsToUpdate.length; i++) {
                 String[] parts = booklistBefore.get(i).split(",");
-                idsToUpdate[i] = Integer.valueOf(parts[0]);
+                idsToUpdate[i] = Integer.parseInt(parts[0]);
             }
 
             logger.info("IDs to update: {}", idsToUpdate);
@@ -360,25 +323,6 @@ class BookDbTest {
     @Test
     void updateBatch() {
         // TODO: test for updating multiple records
-    }
-
-    /**
-     * Helper methods
-     */
-    private static void establishConnection() {
-        try {
-            con = DbConnection.getTestConnection();
-        } catch (SQLException e) {
-            fail(e.getMessage());
-        }
-    }
-
-    private static void closeConnection() {
-        try {
-            DbConnection.close(con);
-        } catch (SQLException e) {
-            fail(e.getMessage());
-        }
     }
 }
 

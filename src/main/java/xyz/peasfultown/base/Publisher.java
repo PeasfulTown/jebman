@@ -9,6 +9,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.StringJoiner;
+
 public class Publisher {
     private int id;
     private String name;
@@ -68,9 +70,9 @@ public class Publisher {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("id=", id)
-                .append("name=", name)
+        return new StringJoiner(",")
+                .add(String.valueOf(this.getId()))
+                .add(this.getName())
                 .toString();
     }
 }

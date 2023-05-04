@@ -6,10 +6,12 @@
 package xyz.peasfultown;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.peasfultown.base.Author;
+import xyz.peasfultown.base.Book;
+import xyz.peasfultown.base.Publisher;
 import xyz.peasfultown.db.*;
 
 import javax.xml.stream.XMLStreamException;
@@ -21,24 +23,20 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 
 public class MainControllerTest {
     private static final Logger logger = LoggerFactory.getLogger(MainControllerTest.class);
-    // Main test directory
     private static final Path mainPath = Path.of(new StringBuilder(System.getProperty("java.io.tmpdir"))
             .append(System.getProperty("file.separator")).append("jebman-library").toString());
     private static final Path dbPath = mainPath.resolve("metadata.db");
     static MainController mc = null;
 
-    @BeforeAll
-    static void setup() {
-    }
-
     @AfterEach
-    void cleanup() {
+    void cleanupEach() {
         cleanupPath(mainPath);
     }
 
@@ -101,10 +99,9 @@ public class MainControllerTest {
     }
 
     @Test
-    void insertPDFInsertsCorrectRecord() {
+    void insertPDFInsertsCorrectRecords() {
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
-        assertTrue((Files.exists(file)));
 
         try {
             MainController mc = new MainController(mainPath.getParent());
@@ -116,21 +113,27 @@ public class MainControllerTest {
 
         try (Connection con = DbConnection.getConnection(dbPath.toString())){
             String bookRecord = BookDb.queryByTitle(con, "dummy");
-            logger.info("Queried record: {}", bookRecord);
+            String authorRecord = AuthorDb.queryByName(con, "Evangelos Vlachogiannis");
+            String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, Integer.parseInt(bookRecord.split(",")[0]));
+
+            logger.info("Book record: {}", bookRecord);
+            logger.info("Author record: {}", authorRecord);
+            logger.info("Link record: {}", bookAuthorLinkRecord);
+
             assertNotNull(bookRecord);
+            assertNotNull(authorRecord);
+            assertNotNull(bookAuthorLinkRecord);
+            assertEquals(Integer.parseInt(authorRecord.split(",")[0]), Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
         } catch (SQLException e) {
             logger.error("Failed to query book record.", e);
             fail();
         }
-
     }
 
     @Test
     void insertEpubCopiesFileToMainPath() {
-        // TODO: check author record
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
-        assertTrue((Files.exists(file)));
 
         try {
             MainController mc = new MainController(mainPath.getParent());
@@ -143,13 +146,11 @@ public class MainControllerTest {
         Path expectedPath = mainPath.resolve(new StringBuilder("Mary Wollstonecraft Shelley")
                 .append(System.getProperty("file.separator"))
                 .append("Frankenstein.epub").toString());
-
         assertTrue(Files.exists(expectedPath), "File expected at " + expectedPath);
     }
 
     @Test
-    void insertEpubInsertsCorrectRecord() {
-        // TODO: check author record
+    void insertEpubInsertsCorrectRecords() {
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
         assertTrue((Files.exists(file)));
@@ -168,19 +169,51 @@ public class MainControllerTest {
             String authorRecord = AuthorDb.queryByName(con, "Mary Wollstonecraft Shelley");
             String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, 1);
 
-            logger.info("Queried book record: {}", bookRecord);
-            logger.info("Queried publisher record: {}", publisherRecord);
+            logger.info("Book record: {}", bookRecord);
+            logger.info("Publisher record: {}", publisherRecord);
+            logger.info("Link record: {}", bookAuthorLinkRecord);
+
             assertNotNull(bookRecord);
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
-            assertEquals(1, Integer.valueOf(bookRecord.split(",")[6]));
             assertNotNull(bookAuthorLinkRecord);
-            assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[1]));
-            assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[2]));
+            assertEquals(1, Integer.parseInt(bookRecord.split(",")[6]));
+            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[1]));
+            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
         } catch (SQLException e) {
             logger.error("Failed to validate \"{}\" records.", file.getFileName(), e);
             fail();
         }
+    }
+
+    @Test
+    void insertBooksUpdatesLists() {
+        try {
+            MainController mc = new MainController(mainPath.getParent());
+            insertTestBooks(mc);
+
+            List<Book> books = mc.getBooks();
+            List<Author> authors = mc.getAuthors();
+            List<Publisher> publishers = mc.getPublishers();
+
+            assertEquals(4, books.size());
+            assertTrue(authors.size() > 0);
+            assertTrue(publishers.size() > 0);
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void bookListIsCorrect() {
+        // TODO: FINISH
+    }
+
+    void insertTestBooks(MainController mc) throws XMLStreamException, SQLException, IOException {
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("machine-stops.pdf").getFile()));
     }
 
     void cleanupPath(Path filePath) {
