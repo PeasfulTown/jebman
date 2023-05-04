@@ -6,10 +6,12 @@
 package xyz.peasfultown;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.peasfultown.base.Author;
+import xyz.peasfultown.base.Book;
+import xyz.peasfultown.base.Publisher;
 import xyz.peasfultown.db.*;
 
 import javax.xml.stream.XMLStreamException;
@@ -21,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -148,7 +151,6 @@ public class MainControllerTest {
 
     @Test
     void insertEpubInsertsCorrectRecords() {
-        // TODO: check author record
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
         assertTrue((Files.exists(file)));
@@ -175,13 +177,43 @@ public class MainControllerTest {
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
             assertNotNull(bookAuthorLinkRecord);
-            assertEquals(1, Integer.valueOf(bookRecord.split(",")[6]));
-            assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[1]));
-            assertEquals(1, Integer.valueOf(bookAuthorLinkRecord.split(",")[2]));
+            assertEquals(1, Integer.parseInt(bookRecord.split(",")[6]));
+            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[1]));
+            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
         } catch (SQLException e) {
             logger.error("Failed to validate \"{}\" records.", file.getFileName(), e);
             fail();
         }
+    }
+
+    @Test
+    void insertBooksUpdatesLists() {
+        try {
+            MainController mc = new MainController(mainPath.getParent());
+            insertTestBooks(mc);
+
+            List<Book> books = mc.getBooks();
+            List<Author> authors = mc.getAuthors();
+            List<Publisher> publishers = mc.getPublishers();
+
+            assertEquals(4, books.size());
+            assertTrue(authors.size() > 0);
+            assertTrue(publishers.size() > 0);
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    void bookListIsCorrect() {
+        // TODO: FINISH
+    }
+
+    void insertTestBooks(MainController mc) throws XMLStreamException, SQLException, IOException {
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));
+        mc.insertBook(Path.of(getClass().getClassLoader().getResource("machine-stops.pdf").getFile()));
     }
 
     void cleanupPath(Path filePath) {
