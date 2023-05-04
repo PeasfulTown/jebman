@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 
@@ -71,6 +72,9 @@ public class MainController {
             }
         }
 
+        this.authors = new ArrayList<>();
+        this.books = new ArrayList<>();
+        this.publishers = new ArrayList<>();
         createTables();
     }
 
@@ -98,19 +102,46 @@ public class MainController {
                 book.setIsbn(metadata.getOrDefault("isbn", ""));
                 book.setUuid(metadata.getOrDefault("uuid", ""));
                 book.setTitle(metadata.getOrDefault("title", parts[0]));
-                if (metadata.get("publisher") != null)
-                    book.setPublisher(new Publisher(metadata.get("publisher")));
-                if (metadata.get("creator") != null)
-                    book.setAuthor(new Author(metadata.get("creator")));
+
+                String publisherMeta = metadata.get("publisher");
+                if (publisherMeta != null) {
+                    Publisher publisher = findPublisherInList(metadata.get("publisher"));
+                    if (publisher == null) {
+                        try (Connection con = DbConnection.getConnection(this.dbPath.toString())) {
+                            publisher = PublisherDb.insert(con, new Publisher(publisherMeta));
+                        }
+                        System.out.format("Publisher record: %s%n", publisher.toString());
+                        this.publishers.add(publisher);
+                    }
+                    book.setPublisher(publisher);
+                }
+
+                String authorMetaEpub = metadata.getOrDefault("creator", "Unknown");
+                Author authorEPUB = findAuthorInList(authorMetaEpub);
+                if (authorEPUB == null) {
+                    try (Connection con = DbConnection.getConnection(this.dbPath.toString())) {
+                        authorEPUB = AuthorDb.insert(con, new Author(authorMetaEpub));
+                    }
+                    this.authors.add(authorEPUB);
+                }
+                book.setAuthor(authorEPUB);
+
                 if (metadata.get("date") != null)
                     book.setPublishDate(MetaReader.parseDate(metadata.get("date")));
-                if (metadata.get("publisher") != null)
-                    book.setPublisher(new Publisher(metadata.get("publisher")));
+
                 break;
             case "pdf":
                 metadata = MetaReader.getPDFMetadata(file);
                 book.setTitle(metadata.getOrDefault("title", parts[0]));
-                book.setAuthor(new Author(metadata.getOrDefault("author", "Unknown")));
+                String authorMetaPDF = metadata.getOrDefault("author", "Unknown");
+                Author authorPDF = findAuthorInList(authorMetaPDF);
+                if (authorPDF == null) {
+                    try (Connection con = DbConnection.getConnection(this.dbPath.toString())) {
+                        authorPDF = AuthorDb.insert(con, new Author(authorMetaPDF));
+                    }
+                    this.authors.add(authorPDF);
+                }
+                book.setAuthor(authorPDF);
                 book.setPublishDate(MetaReader.parseDate(metadata.getOrDefault("date", Instant.now().toString())));
                 break;
             default:
@@ -119,6 +150,7 @@ public class MainController {
 
         Path destDir = this.mainPath
                 .resolve(book.getAuthors().getName());
+
         if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
             Files.createDirectory(destDir);
         }
@@ -130,30 +162,43 @@ public class MainController {
         try (Connection con = DbConnection.getConnection(this.dbPath.toString())){
             // TODO: insert record in book-author joint table
             book = BookDb.insert(con, book);
-            if (book.getPublisher() != null) {
-                String publisherRecord = PublisherDb.queryByName(con, book.getPublisher().getName());
-                if (publisherRecord == null)
-                    book.setPublisher(PublisherDb.insert(con, new Publisher(metadata.get("publisher"))));
-                else
-                    book.setPublisher(Publisher.parse(publisherRecord));
-
-                BookDb.update(con, book.getId(), book);
-                System.out.format("Book has publisher: %s%n", book.getPublisher());
-                System.out.format("Book object: %s%n", book);
-            }
-
-            if (book.getAuthors() != null) {
-                String authorRecord = AuthorDb.queryByName(con, book.getAuthors().getName());
-                if (authorRecord == null)
-                    book.setAuthor(AuthorDb.insert(con, new Author(book.getAuthors().getName())));
-                else
-                    book.setAuthor(Author.parse(authorRecord));
-
-                BookAuthorLinkDb.insert(con, book.getId(), book.getAuthors().getId());
-            }
+            BookDb.update(con, book.getId(), book);
+            BookAuthorLinkDb.insert(con, book.getId(), book.getAuthors().getId());
         } catch (SQLException e) {
             throw new SQLException ("Failed to insert database records for " + file.getFileName(), e);
         }
+
+        this.books.add(book);
+    }
+
+    public List<Book> getBooks() {
+        return this.books;
+    }
+
+    public List<Author> getAuthors() {
+        return this.authors;
+    }
+
+    public List<Publisher> getPublishers() {
+        return this.publishers;
+    }
+
+    private Publisher findPublisherInList(String name) {
+        for (Publisher p : this.publishers) {
+            if (p.getName().equalsIgnoreCase(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private Author findAuthorInList(String name) {
+        for (Author a : this.authors) {
+            if (a.getName().equalsIgnoreCase(name)) {
+                return a;
+            }
+        }
+        return null;
     }
 
     private void createTables() throws SQLException {
