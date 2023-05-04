@@ -6,10 +6,10 @@
  */
 package xyz.peasfultown;
 
-import xyz.peasfultown.base.Author;
-import xyz.peasfultown.base.Book;
-import xyz.peasfultown.base.Series;
-import xyz.peasfultown.base.Publisher;
+import xyz.peasfultown.domain.Author;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Series;
+import xyz.peasfultown.domain.Publisher;
 import xyz.peasfultown.db.*;
 
 import javax.xml.stream.XMLStreamException;

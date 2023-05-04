@@ -3,11 +3,10 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: BookSeries object representation.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.List;
 import java.util.ArrayList;

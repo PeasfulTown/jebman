@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for BookSeries class.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

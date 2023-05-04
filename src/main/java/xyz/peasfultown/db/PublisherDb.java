@@ -5,7 +5,7 @@
  */
 package xyz.peasfultown.db;
 
-import xyz.peasfultown.base.Publisher;
+import xyz.peasfultown.domain.Publisher;
 
 import java.sql.*;
 import java.util.ArrayList;

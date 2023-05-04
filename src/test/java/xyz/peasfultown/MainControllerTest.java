@@ -9,9 +9,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.peasfultown.base.Author;
-import xyz.peasfultown.base.Book;
-import xyz.peasfultown.base.Publisher;
+import xyz.peasfultown.domain.Author;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Publisher;
 import xyz.peasfultown.db.*;
 
 import javax.xml.stream.XMLStreamException;

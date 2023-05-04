@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for Publisher class.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;

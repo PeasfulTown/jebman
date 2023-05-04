@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: Author object representation.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;

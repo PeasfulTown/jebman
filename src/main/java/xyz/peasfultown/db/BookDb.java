@@ -5,7 +5,7 @@
  */
 package xyz.peasfultown.db;
 
-import xyz.peasfultown.base.Book;
+import xyz.peasfultown.domain.Book;
 
 import java.sql.*;
 

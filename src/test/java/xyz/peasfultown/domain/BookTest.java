@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for BookTest class.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

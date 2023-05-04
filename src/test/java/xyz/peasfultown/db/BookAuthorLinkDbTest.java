@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.peasfultown.base.Book;
-import xyz.peasfultown.base.Publisher;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Publisher;
 
 import java.sql.Connection;
 import java.sql.SQLException;
