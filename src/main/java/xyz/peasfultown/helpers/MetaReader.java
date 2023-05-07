@@ -4,12 +4,11 @@
  * Description: Metadata reader for epub, pdf formats, returns metadata such as document title,
  * isbn/uuid (or both if they exist), publish date, etc.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.xml.sax.SAXException;
-import xyz.peasfultown.helpers.MetadataReaderException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -44,12 +43,6 @@ public class MetaReader {
     public static final String PATTERN_ISO_DATETIME = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??Z";
     public static final String PATTERN_ISO_DATETIME_OFFSET = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??(\\+[0-5][0-9]:[0-5][0-9])";
     private static final String EPUB_META_FILE_NAME_PATTERN = ".*?(content.opf)$";
-
-    /**
-     * Prevent object instantiation.
-     */
-    protected MetaReader() {
-    }
 
     public static HashMap<String, String> getMetadata(Path file) throws MetadataReaderException {
         HashMap<String, String> meta = new HashMap<>();

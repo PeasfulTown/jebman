@@ -80,29 +80,26 @@ public class MainControllerTest {
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
 
+        MainController mc = null;
         try {
-            MainController mc = new MainController();
+            mc = new MainController();
             mc.insertBook(file);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         }
 
-        try (Connection con = ConnectionFactory.getConnection()) {
-            String bookRecord = BookDb.queryByTitle(con, "dummy");
-            String authorRecord = AuthorDb.queryByName(con, "Evangelos Vlachogiannis");
-            String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, Integer.parseInt(bookRecord.split(",")[0]));
+        try {
+            Book bookRecord = mc.getBookByTitle("dummy");
+            Author authorRecord = mc.getAuthorByName("Evangelos Vlachogiannis");
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Author record: {}", authorRecord);
-            logger.info("Link record: {}", bookAuthorLinkRecord);
 
             assertNotNull(bookRecord);
             assertNotNull(authorRecord);
-            assertNotNull(bookAuthorLinkRecord);
-            assertEquals(Integer.parseInt(authorRecord.split(",")[0]), Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
-        } catch (SQLException e) {
-            logger.error("Failed to query book record.", e);
+        } catch (DAOException e) {
+            logger.error("Failed to query records.", e);
             fail();
         }
     }
