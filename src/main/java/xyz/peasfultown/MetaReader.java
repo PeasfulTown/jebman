@@ -51,61 +51,65 @@ public class MetaReader {
     protected MetaReader() {
     }
 
-    public static HashMap<String, String> getPDFMetadata(Path file) throws MetadataReaderException {
-        HashMap<String, String> metadata = new HashMap<>();
+    public static HashMap<String, String> getMetadata(Path file) throws MetadataReaderException {
+        HashMap<String, String> meta = new HashMap<>();
+        setBasicFileProperties(meta, file);
+        switch (meta.get("filetype").toLowerCase()) {
+            case "epub":
+                setEpubMetadata(file, meta);
+                return meta;
+            case "pdf":
+                setPDFMetadata(file, meta);
+                return meta;
+            default:
+                throw new MetadataReaderException("Cannot determine filetype.");
+        }
+    }
 
+    public static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         try (PDDocument pdf = PDDocument.load(file.toFile())) {
             PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
             if (pdfInfo.getTitle() != null)
-                metadata.put("title", pdfInfo.getTitle());
+                meta.put("title", pdfInfo.getTitle());
             if (pdfInfo.getAuthor() != null)
-                metadata.put("author", pdfInfo.getAuthor());
+                meta.put("author", pdfInfo.getAuthor());
             if (pdfInfo.getCreationDate() != null)
-                metadata.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
-
-            setBasicFileProperties(metadata, file);
+                meta.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
         } catch (Exception e) {
             throw new MetadataReaderException("Problem while setting getting PDF metadata.", e);
         }
-
-        return metadata;
     }
 
-    public static HashMap<String, String> getEpubMetadata(Path file) throws IOException, XMLStreamException {
-        if (!Files.exists(file)) {
-            throw new FileNotFoundException("File not found.");
-        }
+    public static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
+        if (!Files.exists(file))
+            throw new MetadataReaderException("File not found.");
 
         try {
-            HashMap<String, String> meta = processXML(file.toFile());
-            setBasicFileProperties(meta, file);
-            return meta;
-        } catch (XMLStreamException e) {
-            throw new XMLStreamException(e.getMessage(), e);
+            processXML(file.toFile(), meta);
+        } catch (Exception e) {
+            throw new MetadataReaderException(e.getMessage(), e);
         }
     }
 
-    private static void setBasicFileProperties(Map<String, String> metadata, Path file) throws IOException {
-        String[] parts = file.getFileName().toString().split(".");
+    private static void setBasicFileProperties(Map<String, String> metadata, Path file) throws MetadataReaderException {
+        String[] parts = file.getFileName().toString().split("\\.");
         if (parts.length < 2) {
-            throw new IOException(String.format("Unable to determine %s file type", file.getFileName()));
+            throw new MetadataReaderException(String.format("Unable to determine %s file type", file.getFileName()));
         }
         metadata.putIfAbsent("filename", parts[0]);
         metadata.putIfAbsent("filetype", parts[1]);
     }
 
-    private static HashMap<String, String> processXML(File epub) throws XMLStreamException {
+    private static void processXML(File epub, HashMap<String, String> meta) throws XMLStreamException {
         XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
         XMLStreamReader xsr = null;
 
         try (ZipFile zip = new ZipFile(epub);
              InputStream is = zip.getInputStream(getEpubMetaFile(zip))) {
             xsr = xif.createXMLStreamReader(is);
-            HashMap<String, String> metadata = new HashMap<>();
-            processElements(xsr, metadata);
-            return metadata;
+            processElements(xsr, meta);
         } catch (Exception e) {
-            throw new XMLStreamException(e.getMessage());
+            throw new XMLStreamException(e.getMessage(), e);
         } finally {
             if (xsr != null) {
                 try {
@@ -117,23 +121,21 @@ public class MetaReader {
         }
     }
 
-    private static void processElements(XMLStreamReader xsr, HashMap<String, String> meta) throws XMLStreamException {
+    private static void processElements(XMLStreamReader xsr, HashMap<String, String> meta) throws MetadataReaderException {
+        String propName = null;
         try {
-            String propName = null;
             while (xsr.hasNext()) {
                 xsr.next();
                 switch (xsr.getEventType()) {
                     case XMLStreamConstants.START_ELEMENT:
-                        if (xsr.getPrefix().equals("dc")) {
+                        if (xsr.getPrefix().equals("dc"))
                             propName = xsr.getLocalName();
-                        }
                         break;
                     case XMLStreamConstants.CHARACTERS:
                         if (xsr.hasText()) {
                             String parserText = xsr.getText();
-                            if (propName.equals("identifier")) {
+                            if (propName != null && propName.equals("identifier")) {
                                 boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
-
                                 if (isUUID) {
                                     meta.putIfAbsent("uuid", parserText);
                                 } else {
@@ -145,22 +147,19 @@ public class MetaReader {
                         }
                         break;
                     case XMLStreamConstants.END_ELEMENT:
-                        // End process when reach end of metadata tag
+                        // End process when reach end of metadata tag no need to process further
                         if (xsr.getLocalName().equals("metadata")) {
                             return;
                         }
+                        break;
                     default:
                         // Do nothing
                         break;
                 }
             }
-        } catch (XMLStreamException e) {
-            throw new XMLStreamException(e.getMessage(), e);
+        } catch (Exception e) {
+            throw new MetadataReaderException(e.getMessage(), e);
         }
-    }
-
-    private static void processElement(XMLStreamReader xsr, Map<String, String> meta) {
-
     }
 
     public static Instant parseDate(String date) {

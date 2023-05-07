@@ -106,6 +106,7 @@ public abstract class JDBCAbstractDAO<P> implements GenericDAO<P> {
         }
     }
 
+    @Override
     public P read(String str) throws DAOException {
         String readQuery = this.getReadByNameQuery();
 

@@ -4,6 +4,9 @@ public class BookAuthor {
     private int id;
     private int bookId;
     private int authorId;
+    public BookAuthor() {
+    }
+
     public BookAuthor(int bookId, int authorId) {
         this.bookId = bookId;
         this.authorId = authorId;

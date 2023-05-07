@@ -186,7 +186,7 @@ public class MainControllerTest {
         // TODO: FINISH
     }
 
-    void insertTestBooks(MainController mc) throws DAOException, XMLStreamException, IOException {
+    void insertTestBooks(MainController mc) throws DAOException, MetadataReaderException, IOException {
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));

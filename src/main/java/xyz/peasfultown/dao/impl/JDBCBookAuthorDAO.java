@@ -62,7 +62,7 @@ public class JDBCBookAuthorDAO extends JDBCAbstractDAO<BookAuthor> {
 
     @Override
     protected BookAuthor getObjectFromResultSet(ResultSet rs) throws DAOException {
-        BookAuthor link = null;
+        BookAuthor link = new BookAuthor();
         try {
             link.setId(rs.getInt("id"));
             link.setBookId(rs.getInt("book_id"));

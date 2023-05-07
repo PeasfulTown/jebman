@@ -6,10 +6,8 @@
  */
 package xyz.peasfultown;
 
-import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.builder.fluent.Configurations;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import xyz.peasfultown.dao.DAOException;
+import xyz.peasfultown.dao.GenericDAO;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
 import xyz.peasfultown.helpers.*;
@@ -33,11 +31,11 @@ public class MainController {
     private Map<Integer, Series> seriesMap;
     private Map<Integer, Publisher> publishersMap;
     private Map<Integer, Author> authorsMap;
-    private JDBCBookDAO bookDAO;
-    private JDBCSeriesDAO seriesDAO;
-    private JDBCPublisherDAO publisherDAO;
-    private JDBCAuthorDAO authorDAO;
-    private JDBCBookAuthorDAO bookAuthorDAO;
+    private GenericDAO<Book> bookDAO;
+    private GenericDAO<Series> seriesDAO;
+    private GenericDAO<Publisher> publisherDAO;
+    private GenericDAO<Author> authorDAO;
+    private GenericDAO<BookAuthor> bookAuthorDAO;
 
     /**
      * Default constructor creates a directory for the program at the user's `Documents` directory.
@@ -86,7 +84,7 @@ public class MainController {
      * @throws IOException
      * @throws XMLStreamException
      */
-    public void insertBook(Path file) throws DAOException, IOException, XMLStreamException {
+    public void insertBook(Path file) throws DAOException, IOException, MetadataReaderException {
         // TODO: validate file format
         // TODO: insert author record if not already present
         String[] parts = file.getFileName().toString().split("\\.");
@@ -95,7 +93,7 @@ public class MainController {
             throw new IOException(String.format("Unable to determine %s filetype.", file.getFileName()));
         }
 
-        HashMap<String,String> metadata = MetaReader.getEpubMetadata(file);
+        HashMap<String,String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {
             book = createBookFromMetadata(metadata);
@@ -152,39 +150,19 @@ public class MainController {
 
     private Book createBookFromMetadata(HashMap<String, String> meta) throws DAOException {
         Book book = new Book();
-        String filename = meta.get("filename");
-        String filetype = meta.get("filetype");
-        if (filetype.equalsIgnoreCase("epub")) {
-            book.setIsbn(meta.getOrDefault("isbn", ""));
-            book.setUuid(meta.getOrDefault("uuid", ""));
-            book.setTitle(meta.getOrDefault("title", filename));
-
-            String publisherMeta = meta.get("publisher");
-            if (publisherMeta != null) {
-                Publisher publisher = getPublisherFromMap(meta.get("publisher"));
-                if (publisher == null) {
-                    publisher = new Publisher(publisherMeta);
-                    publisherDAO.create(publisher);
-                    System.out.format("Publisher record: %s%n", publisher);
-                    this.publishersMap.put(publisher.getId(), publisher);
-                }
-                book.setPublisher(publisher);
-            }
-
-            if (meta.get("date") != null)
-                book.setPublishDate(MetaReader.parseDate(meta.get("date")));
-        } else if (filetype.equalsIgnoreCase("pdf")) {
-            book.setTitle(meta.getOrDefault("title", filename));
-            if (meta.get("date") != null)
-                book.setPublishDate(MetaReader.parseDate(meta.get("date")));
+        if (meta.get("filetype").equalsIgnoreCase("epub")) {
+            setEpub(book, meta);
+        } else if (meta.get("filetype").equalsIgnoreCase("pdf")) {
+            setPDF(book, meta);
         }
 
-        if (getBookFromMap(book.getTitle()) != null) {
+        if (getBookFromStore(book.getTitle()) != null) {
             throw new DAOException("Book already exists in record");
         }
+        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
+        book.setPath(authorName + System.getProperty("file.separator") + book.getTitle());
 
         bookDAO.create(book);
-        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
         Author author = getAuthorFromMap(authorName);
         if (author == null) {
             author = new Author(authorName);
@@ -200,7 +178,35 @@ public class MainController {
         return book;
     }
 
-    private Book getBookFromMap(String title) {
+    private void setEpub(Book book, HashMap<String, String> meta) throws DAOException {
+        String filename = meta.get("filename");
+        book.setIsbn(meta.getOrDefault("isbn", ""));
+        book.setUuid(meta.getOrDefault("uuid", ""));
+        book.setTitle(meta.getOrDefault("title", filename));
+
+        String publisherMeta = meta.get("publisher");
+        if (publisherMeta != null) {
+            Publisher publisher = getPublisherFromMap(meta.get("publisher"));
+            if (publisher == null) {
+                publisher = new Publisher(publisherMeta);
+                publisherDAO.create(publisher);
+                this.publishersMap.put(publisher.getId(), publisher);
+            }
+            book.setPublisher(publisher);
+        }
+
+        if (meta.get("date") != null)
+            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
+    }
+
+    private void setPDF(Book book, HashMap<String, String> meta) {
+        String filename = meta.get("filename");
+        book.setTitle(meta.getOrDefault("title", filename));
+        if (meta.get("date") != null)
+            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
+    }
+
+    private Book getBookFromStore(String title) {
         for (Book b : booksMap.values()) {
             if (b.getTitle().equals(title))
                 return b;

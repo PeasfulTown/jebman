@@ -63,7 +63,7 @@ public class JDBCPublisherDAO extends JDBCAbstractDAO<Publisher> {
 
     @Override
     protected Publisher getObjectFromResultSet(ResultSet rs) throws DAOException {
-        Publisher publisher = null;
+        Publisher publisher = new Publisher();
         try {
             publisher.setId(rs.getInt("id"));
             publisher.setName(rs.getString("name"));

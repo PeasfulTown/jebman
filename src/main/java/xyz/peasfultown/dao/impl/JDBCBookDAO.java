@@ -44,25 +44,25 @@ public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
 
     @Override
     protected String getReadAllQuery() {
-        return "SELECT books.*, publishers.name AS publishers_name, series.name AS series_name " +
-                "LEFT JOIN publishers ON books.publisher_id = publishers.id, " +
-                "LEFT JOIN series ON books.series_id = series.id;";
+        return "SELECT B.*, P.name AS publisher_name, S.name AS series_name FROM books B " +
+                "LEFT JOIN publishers P ON B.publisher_id = P.id " +
+                "LEFT JOIN series S ON B.series_id = S.id;";
     }
 
     @Override
     protected String getReadByIdQuery() {
-        return "SELECT books.*, publishers.name AS publishers_name, series.name AS series_name " +
-                "LEFT JOIN publishers ON books.publisher_id = publishers.id, " +
-                "LEFT JOIN series ON books.series_id = series.id " +
-                "WHERE id=?;";
+        return "SELECT B.*, P.name AS publisher_name, S.name AS series_name FROM books B " +
+                "LEFT JOIN publishers P ON B.publisher_id = P.id " +
+                "LEFT JOIN series S ON B.series_id = S.id " +
+                "WHERE B.id=?;";
     }
 
     @Override
     protected String getReadByNameQuery() {
-        return "SELECT books.*, publishers.name AS publishers_name, series.name AS series_name " +
-                "LEFT JOIN publishers ON books.publisher_id = publishers.id, " +
-                "LEFT JOIN series ON books.series_id = series.id " +
-                "WHERE name=?;";
+        return "SELECT B.*, P.name AS publisher_name, S.name AS series_name FROM books B " +
+                "LEFT JOIN publishers P ON B.publisher_id = P.id " +
+                "LEFT JOIN series S ON B.series_id = S.id " +
+                "WHERE B.title=?;";
     }
 
     @Override
@@ -136,9 +136,10 @@ public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
             book.setPublishDate(Instant.parse(rs.getString("date_published")));
             book.setAddedDate(Instant.parse(rs.getString("date_added")));
             book.setModifiedDate(Instant.parse(rs.getString("date_modified")));
+            book.setPath(rs.getString("path"));
         } catch (SQLException e) {
             throw new DAOException(e.getMessage(), e);
         }
-        return null;
+        return book;
     }
 }

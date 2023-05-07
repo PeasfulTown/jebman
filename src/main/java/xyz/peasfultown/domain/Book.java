@@ -170,7 +170,8 @@ public class Book {
                 .add(publisherIsNull ? "null" : getPublisher().getName())
                 .add(getPublishDate().toString())
                 .add(getAddedDate().toString())
-                .add(getModifiedDate().toString()).toString();
+                .add(getModifiedDate().toString())
+                .add(getPath()).toString();
     }
 
     @Override
