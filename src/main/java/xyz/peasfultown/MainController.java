@@ -93,7 +93,7 @@ public class MainController {
             throw new IOException(String.format("Unable to determine %s filetype.", file.getFileName()));
         }
 
-        HashMap<String,String> metadata = MetaReader.getMetadata(file);
+        HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {
             book = createBookFromMetadata(metadata);
@@ -101,15 +101,13 @@ public class MainController {
             throw new DAOException(e.getMessage(), e);
         }
 
-        Path destDir = this.mainPath
-                .resolve(metadata.getOrDefault("author", metadata.getOrDefault("creator", "Unknown")));
-        if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
-            Files.createDirectory(destDir);
-        }
-        Path target = destDir.resolve(String.format("%s.%s",
+        addBookToDirectory(file, metadata
+                        .getOrDefault("author", metadata
+                                .getOrDefault("creator", "Unknown")),
                 book.getTitle(),
-                metadata.get("filetype")));
-        Files.copy(file, target);
+                book.getId(),
+                metadata.get("filetype"));
+        this.booksMap.put(book.getId(), book);
     }
 
     public Book getBookById(int id) throws DAOException {
@@ -146,6 +144,19 @@ public class MainController {
 
     public Path getMainPath() {
         return this.mainPath;
+    }
+
+    private void addBookToDirectory(Path file, String authorName, String bookTitle, int id, String fileType) throws IOException {
+        String titleDir = new StringBuilder(bookTitle).append(' ').append('(').append(id).append(')').toString();
+        Path destDir = Path.of(mainPath.toString(), authorName, titleDir);
+
+        if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
+            Files.createDirectories(destDir);
+        }
+        Path target = destDir.resolve(String.format("%s.%s",
+                bookTitle,
+                fileType));
+        Files.copy(file, target);
     }
 
     private Book createBookFromMetadata(HashMap<String, String> meta) throws DAOException {

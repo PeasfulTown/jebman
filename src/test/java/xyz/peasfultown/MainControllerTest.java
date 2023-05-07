@@ -15,7 +15,6 @@ import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
 import xyz.peasfultown.helpers.*;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -44,11 +43,11 @@ public class MainControllerTest {
 
     @Test
     void testDbFileExistsInTemp() {
+        logger.info("Checking if db file will be created in temp path.");
         try {
             mc = new MainController();
 
             assertTrue(Files.exists(mainPath));
-            cleanupPath(mainPath);
         } catch (SQLException e) {
             logger.error(e.getMessage(), e);
             fail();
@@ -71,9 +70,7 @@ public class MainControllerTest {
             fail();
         }
 
-        Path expectedPath = mainPath.resolve(new StringBuilder("Evangelos Vlachogiannis")
-                .append(System.getProperty("file.separator"))
-                .append("dummy.pdf").toString());
+        Path expectedPath = Path.of(mainPath.toString(), "Evangelos Vlachogiannis", "dummy (1)", "dummy.pdf");
 
         assertTrue(Files.exists(expectedPath), "File expected at " + expectedPath);
     }
@@ -123,9 +120,10 @@ public class MainControllerTest {
             fail();
         }
 
-        Path expectedPath = mainPath.resolve(new StringBuilder("Mary Wollstonecraft Shelley")
-                .append(System.getProperty("file.separator"))
-                .append("Frankenstein.epub").toString());
+        Path expectedPath = Path.of(mainPath.toString(),
+                "Mary Wollstonecraft Shelley",
+                "Frankenstein (1)",
+                "Frankenstein.epub");
         assertTrue(Files.exists(expectedPath), "File expected at " + expectedPath);
     }
 
@@ -165,6 +163,7 @@ public class MainControllerTest {
 
     @Test
     void insertBooksUpdatesLists() {
+        logger.info("Check if books list is updated after inserting books");
         try {
             MainController mc = new MainController();
             insertTestBooks(mc);
@@ -181,9 +180,10 @@ public class MainControllerTest {
         }
     }
 
-    @Test
     void bookListIsCorrect() {
         // TODO: FINISH
+        logger.info("Check if book list is correct");
+
     }
 
     void insertTestBooks(MainController mc) throws DAOException, MetadataReaderException, IOException {

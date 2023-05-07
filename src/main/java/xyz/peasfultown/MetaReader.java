@@ -92,12 +92,14 @@ public class MetaReader {
     }
 
     private static void setBasicFileProperties(Map<String, String> metadata, Path file) throws MetadataReaderException {
-        String[] parts = file.getFileName().toString().split("\\.");
+        String filename = file.getFileName().toString();
+        String[] parts = filename.toString().split("\\.");
         if (parts.length < 2) {
             throw new MetadataReaderException(String.format("Unable to determine %s file type", file.getFileName()));
         }
-        metadata.putIfAbsent("filename", parts[0]);
-        metadata.putIfAbsent("filetype", parts[1]);
+        int ind = filename.lastIndexOf(".");
+        metadata.putIfAbsent("filename", filename.substring(0, ind));
+        metadata.putIfAbsent("filetype", filename.substring(ind + 1));
     }
 
     private static void processXML(File epub, HashMap<String, String> meta) throws XMLStreamException {

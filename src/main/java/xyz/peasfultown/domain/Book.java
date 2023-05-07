@@ -155,8 +155,8 @@ public class Book {
 
     @Override
     public String toString() {
-        boolean seriesIsNull = getSeries() == null;
-        boolean publisherIsNull = getPublisher() == null;
+        boolean seriesIsNull = (getSeries() == null);
+        boolean publisherIsNull = (getPublisher() == null);
 
         return new StringJoiner(",")
                 .add(String.valueOf(getId()))
