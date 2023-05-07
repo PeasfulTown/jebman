@@ -15,11 +15,9 @@ import java.util.StringJoiner;
 public class Series {
     private int id;
     private String name;
-    private List<Book> books;
 
     public Series(String name) {
         this.name = name;
-        this.books = new ArrayList<>();
     }
 
     public Series(int id, String name) {
@@ -43,11 +41,6 @@ public class Series {
         this.name = name;
     }
 
-    public int getNumberOfBooks() {
-        return this.books.size();
-
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -62,28 +55,6 @@ public class Series {
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(name).toHashCode();
-    }
-
-    public List<Book> getBooks() {
-        return this.books;
-    }
-
-    public void addBook(Book bookToAdd) {
-        this.books.add(bookToAdd);
-    }
-
-    public Book getBookByIndex(int index) {
-        return this.books.get(index);
-    }
-
-    public Book getBookByBookNumber(double bookNumber) {
-        for (Book b : books) {
-            if (b.getSeriesNumber() == bookNumber) {
-                return b;
-            }
-        }
-
-        return null;
     }
 
     @Override

@@ -8,6 +8,7 @@ package xyz.peasfultown.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.HashMap;
 import java.util.StringJoiner;
 
 public class Publisher {
@@ -15,7 +16,6 @@ public class Publisher {
     private String name;
 
     public Publisher() {
-        this.name = "";
     }
 
     public Publisher(String name) {
@@ -57,6 +57,15 @@ public class Publisher {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public static Publisher findPublisherInMap(HashMap<Integer, Publisher> publishers, String name) {
+        for (Publisher p : publishers.values()) {
+            if (p.getName().equalsIgnoreCase(name))
+                return p;
+        }
+
+        return null;
     }
 
     public static Publisher parse(String publisherRecord) {

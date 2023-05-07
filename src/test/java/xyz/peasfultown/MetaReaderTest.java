@@ -51,8 +51,7 @@ public class MetaReaderTest {
         try {
             meta = MetaReader.getEpubMetadataSAX(gatsby);
         } catch (Exception e) {
-            logger.error("Fetching metadata failed.");
-            logger.error(e.getMessage());
+            logger.error("Fetching metadata failed.", e);
 
             fail(e);
         }
@@ -118,13 +117,13 @@ public class MetaReaderTest {
     @Test
     void getPDFMeta1() {
         Path file = getFileFromResources("machine-stops.pdf");
-        HashMap<String, String> meta = new HashMap<>();
+        HashMap<String, String> meta = null;
 
         logger.info("=== Checking \"{}\" metadata", file.toAbsolutePath().toString());
         try {
             meta = MetaReader.getPDFMetadata(file);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             fail(e);
         }
 
@@ -139,8 +138,8 @@ public class MetaReaderTest {
         HashMap<String, String> meta = new HashMap<>();
         try  {
             meta = MetaReader.getPDFMetadata(file);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             fail(e);
         }
 

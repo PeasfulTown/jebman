@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: SQLite3 queries for the `series` table.
  */
-package xyz.peasfultown.db;
+package xyz.peasfultown.helpers;
 
 import xyz.peasfultown.domain.Series;
 

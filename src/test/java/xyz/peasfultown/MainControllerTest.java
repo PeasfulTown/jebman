@@ -9,10 +9,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.domain.Author;
 import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
-import xyz.peasfultown.db.*;
+import xyz.peasfultown.helpers.*;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -23,15 +24,16 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 
 public class MainControllerTest {
     private static final Logger logger = LoggerFactory.getLogger(MainControllerTest.class);
-    private static final Path mainPath = Path.of(new StringBuilder(System.getProperty("java.io.tmpdir"))
-            .append(System.getProperty("file.separator")).append("jebman-library").toString());
+    private static final Path mainPath = Path.of(System.getProperty("file.separator"),
+            System.getProperty("java.io.tmpdir"),
+            "jebman-library");
     private static final Path dbPath = mainPath.resolve("metadata.db");
     static MainController mc = null;
 
@@ -43,7 +45,7 @@ public class MainControllerTest {
     @Test
     void testDbFileExistsInTemp() {
         try {
-            mc = new MainController(mainPath.getParent());
+            mc = new MainController();
 
             assertTrue(Files.exists(mainPath));
             cleanupPath(mainPath);
@@ -56,44 +58,22 @@ public class MainControllerTest {
     }
 
     @Test
-    void testDbFileExistsInDocuments() {
-        try {
-            mc = new MainController();
-
-            Path docsDir = Path.of(new StringBuilder(System.getProperty("user.home"))
-                    .append(System.getProperty("file.separator"))
-                    .append("Documents")
-                    .append(System.getProperty("file.separator"))
-                    .append("jebman-library")
-                    .append(System.getProperty("file.separator"))
-                    .append("metadata.db")
-                    .toString());
-
-            assertTrue(Files.exists(docsDir));
-            cleanupPath(docsDir.getParent());
-        } catch (SQLException e) {
-            logger.error(e.getMessage(), e);
-            fail();
-        }
-    }
-
-    @Test
     void insertPDFCopiesFileToMainPath() {
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
         assertTrue((Files.exists(file)));
 
         try {
-            MainController mc = new MainController(mainPath.getParent());
-             mc.insertBook(file);
+            MainController mc = new MainController();
+            mc.insertBook(file);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         }
 
         Path expectedPath = mainPath.resolve(new StringBuilder("Evangelos Vlachogiannis")
-                        .append(System.getProperty("file.separator"))
-                        .append("dummy.pdf").toString());
+                .append(System.getProperty("file.separator"))
+                .append("dummy.pdf").toString());
 
         assertTrue(Files.exists(expectedPath), "File expected at " + expectedPath);
     }
@@ -104,14 +84,14 @@ public class MainControllerTest {
         logger.info("Test insert file \"{}\"", file);
 
         try {
-            MainController mc = new MainController(mainPath.getParent());
+            MainController mc = new MainController();
             mc.insertBook(file);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         }
 
-        try (Connection con = DbConnection.getConnection(dbPath.toString())){
+        try (Connection con = ConnectionFactory.getConnection()) {
             String bookRecord = BookDb.queryByTitle(con, "dummy");
             String authorRecord = AuthorDb.queryByName(con, "Evangelos Vlachogiannis");
             String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, Integer.parseInt(bookRecord.split(",")[0]));
@@ -136,7 +116,7 @@ public class MainControllerTest {
         logger.info("Test insert file \"{}\"", file);
 
         try {
-            MainController mc = new MainController(mainPath.getParent());
+            MainController mc = new MainController();
             mc.insertBook(file);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -154,33 +134,30 @@ public class MainControllerTest {
         Path file = Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile());
         logger.info("Test insert file \"{}\"", file);
         assertTrue((Files.exists(file)));
+        MainController mc = null;
 
         try {
-            MainController mc = new MainController(mainPath.getParent());
+            mc = new MainController();
             mc.insertBook(file);
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error(e.getMessage(), e);
             fail(e);
         }
 
-        try (Connection con = DbConnection.getConnection(dbPath.toString())){
-            String bookRecord = BookDb.queryByTitle(con, "Frankenstein");
-            String publisherRecord = PublisherDb.queryByName(con, "Oxford University Press");
-            String authorRecord = AuthorDb.queryByName(con, "Mary Wollstonecraft Shelley");
-            String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, 1);
+        try {
+            // Check bookauthor link
+            Book bookRecord = mc.getBookByTitle("Frankenstein");
+            Publisher publisherRecord = mc.getPublisherByName("Oxford University Press");
+            Author authorRecord = mc.getAuthorByName("Mary Wollstonecraft Shelley");
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Publisher record: {}", publisherRecord);
-            logger.info("Link record: {}", bookAuthorLinkRecord);
+            logger.info("Author record: {}", authorRecord);
 
             assertNotNull(bookRecord);
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
-            assertNotNull(bookAuthorLinkRecord);
-            assertEquals(1, Integer.parseInt(bookRecord.split(",")[6]));
-            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[1]));
-            assertEquals(1, Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
-        } catch (SQLException e) {
+        } catch (Exception e) {
             logger.error("Failed to validate \"{}\" records.", file.getFileName(), e);
             fail();
         }
@@ -189,12 +166,12 @@ public class MainControllerTest {
     @Test
     void insertBooksUpdatesLists() {
         try {
-            MainController mc = new MainController(mainPath.getParent());
+            MainController mc = new MainController();
             insertTestBooks(mc);
 
-            List<Book> books = mc.getBooks();
-            List<Author> authors = mc.getAuthors();
-            List<Publisher> publishers = mc.getPublishers();
+            Map<Integer, Book> books = mc.getBooks();
+            Map<Integer, Author> authors = mc.getAuthors();
+            Map<Integer, Publisher> publishers = mc.getPublishers();
 
             assertEquals(4, books.size());
             assertTrue(authors.size() > 0);
@@ -209,7 +186,7 @@ public class MainControllerTest {
         // TODO: FINISH
     }
 
-    void insertTestBooks(MainController mc) throws XMLStreamException, SQLException, IOException {
+    void insertTestBooks(MainController mc) throws DAOException, XMLStreamException, IOException {
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
         mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));

@@ -25,18 +25,14 @@ public class Book {
     private Instant publishDate;
     private Instant addedDate;
     private Instant modifiedDate;
-    private Author authors;
+    private String path;
 
     public Book() {
         this.isbn = "";
         this.uuid = "";
-        this.title = "Unknown";
-        this.series = null;
         this.seriesNumber = 1.0;
-        this.publisher = null;
         this.publishDate = Instant.now().truncatedTo(ChronoUnit.DAYS);
         this.addedDate = this.modifiedDate = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        this.authors = null;
     }
 
     public Book(String title) {
@@ -90,6 +86,10 @@ public class Book {
         return title;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public void setSeries(Series series) {
         this.series = series;
     }
@@ -98,8 +98,20 @@ public class Book {
         return this.series;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setSeriesNumber(double number) {
+        this.seriesNumber = number;
+    }
+
+    public double getSeriesNumber() {
+        return this.seriesNumber;
+    }
+
+    public Publisher getPublisher() {
+        return this.publisher;
+    }
+
+    public void setPublisher(Publisher publisher) {
+        this.publisher = publisher;
     }
 
     public Instant getPublishDate() {
@@ -126,32 +138,15 @@ public class Book {
         this.modifiedDate = modifiedDate.truncatedTo(ChronoUnit.SECONDS);
     }
 
-    public Author getAuthors() {
-        return this.authors;
+    public String getPath() {
+        return this.path;
     }
 
-    public void setAuthor(Author author) {
-        this.authors = author;
-    }
-
-    public Publisher getPublisher() {
-        return this.publisher;
-    }
-
-    public void setPublisher(Publisher publisher) {
-        this.publisher = publisher;
-    }
-
-    public void setSeriesNumber(double number) {
-        this.seriesNumber = number;
-    }
-
-    public double getSeriesNumber() {
-        return this.seriesNumber;
+    public void setPath(String path) {
+        this.path = path;
     }
 
     // ============ Static methods ============
-
     public static Instant toTimeStamp(int year, int month, int dayOfMonth) {
         LocalDate ld = LocalDate.of(year, month, dayOfMonth);
 
