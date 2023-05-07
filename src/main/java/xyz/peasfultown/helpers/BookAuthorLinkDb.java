@@ -4,7 +4,7 @@
  * Description: Database interaction for the `books_authors_link` table, this is a joint table to establish
  * relationship between the `books` and the `authors` records.
  */
-package xyz.peasfultown.db;
+package xyz.peasfultown.helpers;
 
 import java.sql.*;
 import java.util.StringJoiner;

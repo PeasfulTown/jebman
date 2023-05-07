@@ -3,9 +3,9 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: SQLite3 queries for the `books` table.
  */
-package xyz.peasfultown.db;
+package xyz.peasfultown.helpers;
 
-import xyz.peasfultown.base.Book;
+import xyz.peasfultown.domain.Book;
 
 import java.sql.*;
 

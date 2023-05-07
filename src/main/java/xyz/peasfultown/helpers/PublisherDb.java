@@ -3,9 +3,9 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: SQLite3 queries for the `publishers` table.
  */
-package xyz.peasfultown.db;
+package xyz.peasfultown.helpers;
 
-import xyz.peasfultown.base.Publisher;
+import xyz.peasfultown.domain.Publisher;
 
 import java.sql.*;
 import java.util.ArrayList;

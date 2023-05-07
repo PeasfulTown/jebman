@@ -1,52 +1,30 @@
 /**
  * See end of file for extended copyright information.
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
- * Description: BookSeries object representation.
+ * Description: Publisher object representation.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringJoiner;
 
-public class Series {
+public class Publisher {
     private int id;
     private String name;
-    private List<Book> books;
 
-    public Series(String name) {
-        this.name = name;
-        this.books = new ArrayList<>();
+    public Publisher() {
     }
 
-    public Series(int id, String name) {
+    public Publisher(String name) {
+        this.name = name;
+    }
+
+    public Publisher(int id, String name) {
         this(name);
         this.id = id;
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getNumberOfBooks() {
-        return this.books.size();
-
     }
 
     @Override
@@ -55,9 +33,9 @@ public class Series {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        Series that = (Series) o;
+        Publisher publisher = (Publisher) o;
 
-        return new EqualsBuilder().append(name, that.name).isEquals();
+        return new EqualsBuilder().append(name, publisher.name).isEquals();
     }
 
     @Override
@@ -65,26 +43,37 @@ public class Series {
         return new HashCodeBuilder(17, 37).append(name).toHashCode();
     }
 
-    public List<Book> getBooks() {
-        return this.books;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public void addBook(Book bookToAdd) {
-        this.books.add(bookToAdd);
+    public int getId() {
+        return this.id;
     }
 
-    public Book getBookByIndex(int index) {
-        return this.books.get(index);
+    public String getName() {
+        return name;
     }
 
-    public Book getBookByBookNumber(double bookNumber) {
-        for (Book b : books) {
-            if (b.getSeriesNumber() == bookNumber) {
-                return b;
-            }
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public static Publisher findPublisherInMap(HashMap<Integer, Publisher> publishers, String name) {
+        for (Publisher p : publishers.values()) {
+            if (p.getName().equalsIgnoreCase(name))
+                return p;
         }
 
         return null;
+    }
+
+    public static Publisher parse(String publisherRecord) {
+        String[] elems = publisherRecord.split(",");
+        Publisher newPub = new Publisher();
+        newPub.setId(Integer.valueOf(elems[0]));
+        newPub.setName(elems[1]);
+        return newPub;
     }
 
     @Override

@@ -5,34 +5,14 @@
  */
 package xyz.peasfultown;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.junit.jupiter.api.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
+import xyz.peasfultown.helpers.MetadataReaderException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,8 +31,7 @@ public class MetaReaderTest {
         try {
             meta = MetaReader.getEpubMetadataSAX(gatsby);
         } catch (Exception e) {
-            logger.error("Fetching metadata failed.");
-            logger.error(e.getMessage());
+            logger.error("Fetching metadata failed.", e);
 
             fail(e);
         }
@@ -68,9 +47,9 @@ public class MetaReaderTest {
     }
 
     @Test
-    void getEpubMetaUsingStAX1() throws IOException, XMLStreamException {
+    void getEpubMetaUsingStAX1() throws MetadataReaderException {
         Path file = getFileFromResources("gatsby.epub");
-        HashMap<String, String> meta = MetaReader.getEpubMetadata(file);
+        HashMap<String, String> meta = MetaReader.getMetadata(file);
 
         logger.info("=== Checking \"{}\" metadata", file);
 
@@ -88,11 +67,11 @@ public class MetaReaderTest {
     }
 
     @Test
-    void getEpubMetaUsingStAX2() throws IOException, XMLStreamException {
+    void getEpubMetaUsingStAX2() throws MetadataReaderException {
         Path file = getFileFromResources("frankenstein.epub");
 
         HashMap<String, String> meta = MetaReader
-                .getEpubMetadata(file);
+                .getMetadata(file);
 
         logger.info("=== Checking \"{}\" metadata", file);
 
@@ -118,13 +97,13 @@ public class MetaReaderTest {
     @Test
     void getPDFMeta1() {
         Path file = getFileFromResources("machine-stops.pdf");
-        HashMap<String, String> meta = new HashMap<>();
+        HashMap<String, String> meta = null;
 
         logger.info("=== Checking \"{}\" metadata", file.toAbsolutePath().toString());
         try {
-            meta = MetaReader.getPDFMetadata(file);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+            meta = MetaReader.getMetadata(file);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             fail(e);
         }
 
@@ -138,9 +117,9 @@ public class MetaReaderTest {
         logger.info("=== Checking \"{}\" metadata", file.toAbsolutePath().toString());
         HashMap<String, String> meta = new HashMap<>();
         try  {
-            meta = MetaReader.getPDFMetadata(file);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+            meta = MetaReader.getMetadata(file);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             fail(e);
         }
 

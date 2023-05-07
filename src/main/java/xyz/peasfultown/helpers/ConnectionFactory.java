@@ -1,13 +1,26 @@
-package xyz.peasfultown.db;
+/**
+ * See end of file for extended copyright information.
+ * Original Author(s): PeasfulTown (peasfultown@gmail.com)
+ * Description: Class for obtaining  SQLite3 connection.
+ */
+package xyz.peasfultown.helpers;
 
-import org.junit.platform.suite.api.*;
+import xyz.peasfultown.ApplicationConfig;
 
-@Suite
-@SuiteDisplayName("JUnit Platform Suite Demo")
-//@SelectPackages("xyz.peasfultown.library.sql")
-@SelectClasses({DbConnectionTest.class})
-@IncludeClassNamePatterns(".*Test")
-public class DbTestSuite {
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class ConnectionFactory {
+    private static String CONNECTION_STRING;
+
+    static {
+        CONNECTION_STRING = ApplicationConfig.CONNECTION_STRING;
+    }
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(CONNECTION_STRING);
+    }
 }
 
 /**

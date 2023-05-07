@@ -3,9 +3,9 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: SQLite3 queries for the `authors` table.
  */
-package xyz.peasfultown.db;
+package xyz.peasfultown.helpers;
 
-import xyz.peasfultown.base.Author;
+import xyz.peasfultown.domain.Author;
 
 import java.sql.*;
 import java.util.ArrayList;

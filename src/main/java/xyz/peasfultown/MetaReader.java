@@ -9,6 +9,7 @@ package xyz.peasfultown;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.xml.sax.SAXException;
+import xyz.peasfultown.helpers.MetadataReaderException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -16,6 +17,8 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamConstants;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +32,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-class MetaReader {
+public class MetaReader {
     public static final String PATTERN_ISBN = "(97[89])?([0-9]){10}";
     public static final String PATTERN_UUID = "([a-zA-Z0-9]{8})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{4})-([a-zA-Z0-9]{12})";
     public static final String PATTERN_DATE = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))";
@@ -47,93 +51,117 @@ class MetaReader {
     protected MetaReader() {
     }
 
-    public static HashMap<String, String> getPDFMetadata(Path file) throws IOException {
-        HashMap<String, String> metadata = new HashMap<>();
+    public static HashMap<String, String> getMetadata(Path file) throws MetadataReaderException {
+        HashMap<String, String> meta = new HashMap<>();
+        setBasicFileProperties(meta, file);
+        switch (meta.get("filetype").toLowerCase()) {
+            case "epub":
+                setEpubMetadata(file, meta);
+                return meta;
+            case "pdf":
+                setPDFMetadata(file, meta);
+                return meta;
+            default:
+                throw new MetadataReaderException("Cannot determine filetype.");
+        }
+    }
 
+    public static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         try (PDDocument pdf = PDDocument.load(file.toFile())) {
             PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
             if (pdfInfo.getTitle() != null)
-                metadata.put("title", pdfInfo.getTitle());
+                meta.put("title", pdfInfo.getTitle());
             if (pdfInfo.getAuthor() != null)
-                metadata.put("author", pdfInfo.getAuthor());
+                meta.put("author", pdfInfo.getAuthor());
             if (pdfInfo.getCreationDate() != null)
-                metadata.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+                meta.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
+        } catch (Exception e) {
+            throw new MetadataReaderException("Problem while setting getting PDF metadata.", e);
         }
-
-        return metadata;
     }
 
-    public static HashMap<String, String> getEpubMetadata(Path file) throws IOException, XMLStreamException {
-        if (!Files.exists(file)) {
-            throw new FileNotFoundException("File not found.");
-        }
-
-        // Create input stream from zip entry
-        ZipFile epubZip = null;
-        InputStream inputStream = null;
-
-        XMLStreamReader xsr = null;
-        HashMap<String, String> meta = new HashMap<>();
+    public static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
+        if (!Files.exists(file))
+            throw new MetadataReaderException("File not found.");
 
         try {
-            epubZip = new ZipFile(file.toFile());
-            inputStream = epubZip.getInputStream(getEpubMetaFile(epubZip));
+            processXML(file.toFile(), meta);
+        } catch (Exception e) {
+            throw new MetadataReaderException(e.getMessage(), e);
+        }
+    }
 
-            XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
-            xsr = xif.createXMLStreamReader(inputStream);
+    private static void setBasicFileProperties(Map<String, String> metadata, Path file) throws MetadataReaderException {
+        String filename = file.getFileName().toString();
+        String[] parts = filename.toString().split("\\.");
+        if (parts.length < 2) {
+            throw new MetadataReaderException(String.format("Unable to determine %s file type", file.getFileName()));
+        }
+        int ind = filename.lastIndexOf(".");
+        metadata.putIfAbsent("filename", filename.substring(0, ind));
+        metadata.putIfAbsent("filetype", filename.substring(ind + 1));
+    }
 
-            String propName = null;
-            boolean keepProp = false;
-            while (xsr.hasNext()) {
-                xsr.next();
+    private static void processXML(File epub, HashMap<String, String> meta) throws XMLStreamException {
+        XMLInputFactory xif = XMLInputFactory.newDefaultFactory();
+        XMLStreamReader xsr = null;
 
-                if (xsr.isStartElement()) {
-                    if (xsr.getPrefix().equals("dc")) {
-                        propName = xsr.getLocalName();
-                        keepProp = true;
-                    }
-                }
-
-                if (xsr.isCharacters() && keepProp) {
-                    if (xsr.hasText()) {
-                        String parserText = xsr.getText();
-                        if (propName.equals("identifier")) {
-                            boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
-
-                            if (isUUID) {
-                                meta.putIfAbsent("uuid", parserText);
-                            } else {
-                                meta.putIfAbsent("isbn", parserText);
-                            }
-                        } else {
-                            meta.putIfAbsent(propName, parserText);
-                        }
-                    }
-
-                    keepProp = false;
-                }
-
-                // End parsing job once the metadata tag is ended
-                if (xsr.isEndElement()) {
-                    if (xsr.getLocalName().equals("metadata")) {
-                        break;
-                    }
-                }
-            }
+        try (ZipFile zip = new ZipFile(epub);
+             InputStream is = zip.getInputStream(getEpubMetaFile(zip))) {
+            xsr = xif.createXMLStreamReader(is);
+            processElements(xsr, meta);
+        } catch (Exception e) {
+            throw new XMLStreamException(e.getMessage(), e);
         } finally {
             if (xsr != null) {
-                xsr.close();
-            }
-
-            if (inputStream != null) {
-                inputStream.close();
-            }
-
-            if (epubZip != null) {
-                epubZip.close();
+                try {
+                    xsr.close();
+                } catch (XMLStreamException e) {
+                    System.err.format("Unable to close XMLStreamReader: %s%n", e);
+                }
             }
         }
-        return meta;
+    }
+
+    private static void processElements(XMLStreamReader xsr, HashMap<String, String> meta) throws MetadataReaderException {
+        String propName = null;
+        try {
+            while (xsr.hasNext()) {
+                xsr.next();
+                switch (xsr.getEventType()) {
+                    case XMLStreamConstants.START_ELEMENT:
+                        if (xsr.getPrefix().equals("dc"))
+                            propName = xsr.getLocalName();
+                        break;
+                    case XMLStreamConstants.CHARACTERS:
+                        if (xsr.hasText()) {
+                            String parserText = xsr.getText();
+                            if (propName != null && propName.equals("identifier")) {
+                                boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
+                                if (isUUID) {
+                                    meta.putIfAbsent("uuid", parserText);
+                                } else {
+                                    meta.putIfAbsent("isbn", parserText);
+                                }
+                            } else {
+                                meta.putIfAbsent(propName, parserText);
+                            }
+                        }
+                        break;
+                    case XMLStreamConstants.END_ELEMENT:
+                        // End process when reach end of metadata tag no need to process further
+                        if (xsr.getLocalName().equals("metadata")) {
+                            return;
+                        }
+                        break;
+                    default:
+                        // Do nothing
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            throw new MetadataReaderException(e.getMessage(), e);
+        }
     }
 
     public static Instant parseDate(String date) {

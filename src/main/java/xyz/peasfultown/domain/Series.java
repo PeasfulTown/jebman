@@ -1,31 +1,44 @@
 /**
  * See end of file for extended copyright information.
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
- * Description: Publisher object representation.
+ * Description: BookSeries object representation.
  */
-package xyz.peasfultown.base;
+package xyz.peasfultown.domain;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.StringJoiner;
 
-public class Publisher {
+public class Series {
     private int id;
     private String name;
 
-    public Publisher() {
-        this.name = "";
-    }
-
-    public Publisher(String name) {
+    public Series(String name) {
         this.name = name;
     }
 
-    public Publisher(int id, String name) {
+    public Series(int id, String name) {
         this(name);
         this.id = id;
+    }
+
+    public int getId() {
+        return this.id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override
@@ -34,38 +47,14 @@ public class Publisher {
 
         if (o == null || getClass() != o.getClass()) return false;
 
-        Publisher publisher = (Publisher) o;
+        Series that = (Series) o;
 
-        return new EqualsBuilder().append(name, publisher.name).isEquals();
+        return new EqualsBuilder().append(name, that.name).isEquals();
     }
 
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(name).toHashCode();
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return this.id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public static Publisher parse(String publisherRecord) {
-        String[] elems = publisherRecord.split(",");
-        Publisher newPub = new Publisher();
-        newPub.setId(Integer.valueOf(elems[0]));
-        newPub.setName(elems[1]);
-        return newPub;
     }
 
     @Override
