@@ -54,13 +54,21 @@ public class JebmanGUI extends Application {
         row2.setVgrow(Priority.ALWAYS);
         mainGrid.getRowConstraints().addAll(row1, row2);
 
-        // TODO: add info pane
-        Label placeHolder = new Label("Info goes here");
         mainGrid.add(getTopBar(), 0, 0, 2, 1);
-        mainGrid.add(placeHolder, 0, 1);
+        mainGrid.add(getBookInfoPanel(), 0, 1);
         mainGrid.add(getBookTable(), 1, 1);
 
         return mainGrid;
+    }
+
+    private VBox getBookInfoPanel() {
+        final VBox panel = new VBox();
+        // TODO: add info pane
+        Label placeHolder = new Label("Info goes here");
+        panel.getChildren().addAll(placeHolder);
+        panel.setPadding(new Insets(10, 10, 10, 10));
+
+        return panel;
     }
 
     private TableView getBookTable() {
@@ -89,5 +97,6 @@ public class JebmanGUI extends Application {
 
         return hbox;
     }
+
 
 }
