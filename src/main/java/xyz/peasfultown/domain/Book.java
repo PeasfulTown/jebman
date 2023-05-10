@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.StringJoiner;
 
-public class Book {
+public class Book implements Record {
     private int id;
     private String isbn;
     private String uuid;
@@ -144,6 +144,10 @@ public class Book {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getName() {
+        return this.getTitle();
     }
 
     // ============ Static methods ============
