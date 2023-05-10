@@ -1,11 +1,11 @@
 package xyz.peasfultown;
 
 import xyz.peasfultown.interfaces.JebmanGUI;
+import xyz.peasfultown.interfaces.JebmanPrompt;
 
 public class Application {
 
     public static void main(String[] args) {
-        boolean tui = true;
         boolean gui = false;
 
         int argi = 0;
@@ -19,7 +19,6 @@ public class Application {
                 char c = arg.charAt(i);
                 switch (c) {
                     case 'g' :
-                        tui = false;
                         gui = true;
                         break;
                     default :
@@ -31,6 +30,8 @@ public class Application {
 
         if (gui) {
             JebmanGUI.main(args);
+        } else {
+            JebmanPrompt.main(args);
         }
     }
 
