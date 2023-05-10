@@ -3,6 +3,7 @@ package xyz.peasfultown.dao.impl;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
+import xyz.peasfultown.domain.SearchableRecordSet;
 import xyz.peasfultown.domain.Series;
 
 import java.sql.PreparedStatement;
@@ -10,15 +11,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Instant;
-import java.util.Map;
+import java.util.Set;
 
 public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
-    private Map<Integer, Series> collectedSeriesMap;
-    private Map<Integer, Publisher> collectedPublisherMap;
+    private SearchableRecordSet<Series> seriesSet;
+    private SearchableRecordSet<Publisher> publisherSet;
 
-    public JDBCBookDAO(Map<Integer, Series> series, Map<Integer, Publisher> publishers) {
-        this.collectedSeriesMap = series;
-        this.collectedPublisherMap = publishers;
+    public JDBCBookDAO(SearchableRecordSet<Series> series, SearchableRecordSet<Publisher> publishers) {
+        this.seriesSet = series;
+        this.publisherSet = publishers;
     }
 
     @Override
@@ -116,19 +117,19 @@ public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
             book.setTitle(rs.getString("title"));
             Integer seriesId = rs.getInt("series_id");
             if (seriesId > 0) {
-                Series series = collectedSeriesMap.get(seriesId);
+                Series series = (Series) seriesSet.getById(seriesId);
                 if (series == null) {
                     series = new Series(rs.getString("series_name"));
-                    collectedSeriesMap.put(seriesId, series);
+                    seriesSet.add(series);
                 }
                 book.setSeries(series);
             }
             Integer publisherId = rs.getInt("publisher_id");
             if (publisherId > 0) {
-                Publisher publisher = collectedPublisherMap.get(publisherId);
+                Publisher publisher = (Publisher) publisherSet.getById(publisherId);
                 if (publisher == null) {
                     publisher = new Publisher(rs.getString("publisher_name"));
-                    collectedPublisherMap.put(publisherId, publisher);
+                    publisherSet.add(publisher);
                 }
                 book.setPublisher(publisher);
             }

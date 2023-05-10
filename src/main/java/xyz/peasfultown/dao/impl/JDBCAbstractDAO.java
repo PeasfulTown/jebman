@@ -2,16 +2,17 @@ package xyz.peasfultown.dao.impl;
 
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.GenericDAO;
+import xyz.peasfultown.domain.Record;
+import xyz.peasfultown.domain.SearchableRecordSet;
 import xyz.peasfultown.helpers.ConnectionFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
 
-public abstract class JDBCAbstractDAO<P> implements GenericDAO<P> {
+public abstract class JDBCAbstractDAO<P extends Record> implements GenericDAO<P> {
     private static final int EXECUTE_UPDATE_SUCCESS = 1;
     private static final String SQL_QUERY_LAST_INSERT_ID = "SELECT last_insert_rowid() as id;";
 
@@ -71,15 +72,15 @@ public abstract class JDBCAbstractDAO<P> implements GenericDAO<P> {
         }
     }
 
-    public List<P> readAll() throws DAOException {
+    public HashSet<P> readAll() throws DAOException {
         String readAllQuery = this.getReadAllQuery();
 
         try (Connection con = ConnectionFactory.getConnection();
             PreparedStatement stmt = con.prepareStatement(readAllQuery)) {
             try (ResultSet rs = stmt.executeQuery()) {
-                List<P> objects = new LinkedList<>();
+                HashSet<P> objects = new SearchableRecordSet<>();
                 while (rs.next()) {
-                    getObjectFromResultSet(rs);
+                    objects.add(getObjectFromResultSet(rs));
                 }
                 return objects;
             }

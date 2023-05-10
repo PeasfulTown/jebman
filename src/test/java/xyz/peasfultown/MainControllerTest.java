@@ -10,10 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.peasfultown.dao.DAOException;
-import xyz.peasfultown.domain.Author;
-import xyz.peasfultown.domain.Book;
-import xyz.peasfultown.domain.Publisher;
-import xyz.peasfultown.helpers.*;
+import xyz.peasfultown.dao.impl.*;
+import xyz.peasfultown.domain.*;
+import xyz.peasfultown.helpers.MetadataReaderException;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -21,9 +20,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +45,7 @@ public class MainControllerTest {
             mc = new MainController();
 
             assertTrue(Files.exists(mainPath));
-        } catch (SQLException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         } finally {
@@ -77,6 +74,7 @@ public class MainControllerTest {
 
     @Test
     void insertPDFInsertsCorrectRecords() {
+        // TODO: check tags
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
 
@@ -90,8 +88,8 @@ public class MainControllerTest {
         }
 
         try {
-            Book bookRecord = mc.getBookByTitle("dummy");
-            Author authorRecord = mc.getAuthorByName("Evangelos Vlachogiannis");
+            Book bookRecord = new JDBCBookDAO(null, null).read("dummy");
+            Author authorRecord = new JDBCAuthorDAO().read("Evangelos Vlachogiannis");
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Author record: {}", authorRecord);
@@ -140,10 +138,13 @@ public class MainControllerTest {
         }
 
         try {
-            // Check bookauthor link
-            Book bookRecord = mc.getBookByTitle("Frankenstein");
-            Publisher publisherRecord = mc.getPublisherByName("Oxford University Press");
-            Author authorRecord = mc.getAuthorByName("Mary Wollstonecraft Shelley");
+            // TODO: check tags
+            SearchableRecordSet<Publisher> publishers = (SearchableRecordSet<Publisher>) new JDBCPublisherDAO().readAll();
+            SearchableRecordSet<Series> series = (SearchableRecordSet<Series>) new JDBCSeriesDAO().readAll();
+            Book bookRecord = new JDBCBookDAO(series, publishers).read("Frankenstein");
+            Publisher publisherRecord = new JDBCPublisherDAO().read("Oxford University Press");
+            Author authorRecord = new JDBCAuthorDAO().read("Mary Wollstonecraft Shelley");
+            BookAuthor bookAuthor = new JDBCBookAuthorDAO().read(1);
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Publisher record: {}", publisherRecord);
@@ -152,6 +153,7 @@ public class MainControllerTest {
             assertNotNull(bookRecord);
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
+            assertEquals("1,1,1", bookAuthor.toString());
         } catch (Exception e) {
             logger.error("Failed to validate \"{}\" records.", file.getFileName(), e);
             fail();
@@ -165,22 +167,37 @@ public class MainControllerTest {
             MainController mc = new MainController();
             insertTestBooks(mc);
 
-            Map<Integer, Book> books = mc.getBooks();
-            Map<Integer, Author> authors = mc.getAuthors();
-            Map<Integer, Publisher> publishers = mc.getPublishers();
+            Set<Book> books = mc.getBooks();
+            Set<Author> authors = mc.getAuthors();
+            Set<Publisher> publishers = mc.getPublishers();
 
             assertEquals(4, books.size());
             assertTrue(authors.size() > 0);
             assertTrue(publishers.size() > 0);
+            for (Book b : books) {
+                logger.info(b.toString());
+            }
         } catch (Exception e) {
             fail(e);
         }
     }
 
-    void bookListIsCorrect() {
-        // TODO: FINISH
-        logger.info("Check if book list is correct");
+    @Test
+    void loadExistingDatabase() {
+        // TODO: finish
+        fail();
+    }
 
+    @Test
+    void deleteBookRemovesBookFromFileSystem() {
+        // TODO: finish
+        fail();
+    }
+
+    @Test
+    void updateBookInfo() {
+        // TODO: finish
+        fail();
     }
 
     void insertTestBooks(MainController mc) throws DAOException, MetadataReaderException, IOException {
