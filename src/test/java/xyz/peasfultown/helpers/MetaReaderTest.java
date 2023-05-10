@@ -3,13 +3,11 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for MetaReader.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.peasfultown.helpers.MetaReader;
-import xyz.peasfultown.helpers.MetadataReaderException;
 
 import javax.xml.stream.XMLStreamConstants;
 import java.nio.file.Path;
