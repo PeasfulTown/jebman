@@ -12,33 +12,60 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ApplicationConfig {
+    public static final String SQLITE_JDBC_PREFIX = "jdbc:sqlite:";
     public static String CONNECTION_STRING;
     public static Path MAIN_PATH;
 
     static {
-        ready();
+        MAIN_PATH = Path.of(ApplicationDefaults.MAIN_PATH);
     }
 
     /**
      * Check if in `dev` environment, if so, use test variables. Otherwise, load from config file (application.properties)
      */
-    private static void ready() {
-        String env = System.getenv("env");
-        if (env != null && env.equalsIgnoreCase("dev")) {
-            System.out.println("Development environment detected.");
-            MAIN_PATH = Path.of(ApplicationDefaults.TEMPORARY_PATH);
-        } else {
-            setMainPathFromConfigFile();
+    public static void ready() {
+        System.out.println("Ready application config");
+        setConnectionString(MAIN_PATH);
+        createPathDirs(MAIN_PATH);
+    }
+
+    public static void setMainPath(String str) {
+        setMainPath(Path.of(str));
+    }
+
+    public static void setMainPath(Path path) {
+        MAIN_PATH = path;
+        ready();
+    }
+
+    public static void setMainPathInConfigFile(String pathStr) {
+        System.out.println("Set main path config");
+        Parameters params = new Parameters();
+        FileBasedConfigurationBuilder<FileBasedConfiguration> builder =
+                new FileBasedConfigurationBuilder<FileBasedConfiguration>(PropertiesConfiguration.class)
+                        .configure(params.properties().setFileName(ApplicationDefaults.PROPERTIES_FILE_NAME));
+        try {
+            Configuration config = builder.getConfiguration();
+            config.setProperty("app.mainLocation", pathStr);
+            builder.save();
+            Path path = Path.of(pathStr);
+            createPathDirs(path);
+            setConnectionString(path);
+        } catch (ConfigurationException e) {
+            System.err.format("Failed to read application properties, revert to defaults: %s%n", e);
+            setDefaults();
         }
-        CONNECTION_STRING = "jdbc:sqlite:" + MAIN_PATH.resolve("metadata.db");
-        readyPath(MAIN_PATH);
+    }
+
+    private static void setConnectionString(Path path) {
+        CONNECTION_STRING = SQLITE_JDBC_PREFIX + path.resolve("metadata.db");
     }
 
     /**
      * Create necessary directory.
      * @param dir
      */
-    private static void readyPath(Path dir) {
+    private static void createPathDirs(Path dir) {
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {

@@ -19,8 +19,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,17 +49,17 @@ public class MainController {
         ready();
 
         try {
-            this.publisherDAO   = new JDBCPublisherDAO();
-            this.seriesDAO      = new JDBCSeriesDAO();
-            this.authorDAO      = new JDBCAuthorDAO();
-            this.bookAuthorDAO  = new JDBCBookAuthorDAO();
+            this.publisherDAO = new JDBCPublisherDAO();
+            this.seriesDAO = new JDBCSeriesDAO();
+            this.authorDAO = new JDBCAuthorDAO();
+            this.bookAuthorDAO = new JDBCBookAuthorDAO();
 
-            this.seriesMap      = (SearchableRecordSet<Series>) this.getAllSeries();
-            this.publishersMap  = (SearchableRecordSet<Publisher>) this.getAllPublishers();
-            this.authorsMap     = (SearchableRecordSet<Author>) this.getAllAuthors();
+            this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
+            this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
+            this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
 
-            this.bookDAO        = new JDBCBookDAO(seriesMap, publishersMap);
-            this.booksMap       = (SearchableRecordSet<Book>) this.getAllBooks();
+            this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
+            this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
         } catch (DAOException e) {
             throw new DAOException("Failed to query book props.", e);
         }
@@ -101,7 +102,7 @@ public class MainController {
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {
-            book = createBookFromMetadata(metadata);
+            book = createRecordsFromMetadata(metadata);
         } catch (DAOException e) {
             throw new DAOException(e.getMessage(), e);
         }
@@ -113,6 +114,24 @@ public class MainController {
                 book.getId(),
                 metadata.get("filetype"));
         this.booksMap.add(book);
+    }
+
+    public void removeBook(int id) throws DAOException, IOException {
+        Book book = bookDAO.read(id);
+        removeBook(book);
+    }
+
+    public void removeBook(Book book) throws DAOException, IOException {
+        Path pathToRemove = Path.of(ApplicationConfig.MAIN_PATH.toString(), book.getPath());
+        TreeDeleter td = new TreeDeleter();
+        Files.walkFileTree(pathToRemove, td);
+
+        bookDAO.delete(book.getId());
+        booksMap.remove(book);
+    }
+
+    public void updateBook(Book book) throws DAOException {
+        bookDAO.update(book);
     }
 
     private Set<Publisher> getAllPublishers() throws DAOException {
@@ -154,62 +173,65 @@ public class MainController {
         Files.copy(file, target);
     }
 
-    private Book createBookFromMetadata(HashMap<String, String> meta) throws DAOException {
+    private Book createRecordsFromMetadata(HashMap<String, String> meta) throws DAOException {
         Book book = new Book();
-        if (meta.get("filetype").equalsIgnoreCase("epub")) {
-            setEpub(book, meta);
-        } else if (meta.get("filetype").equalsIgnoreCase("pdf")) {
-            setPDF(book, meta);
-        }
+        book.setTitle(meta.getOrDefault("title", meta.get("filename")));
 
         if (booksMap.getByName(book.getTitle()) != null) {
             throw new DAOException("Book already exists in record");
         }
-        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
-        book.setPath(getRelativePathToBook(authorName, book.getTitle(), book.getId()));
+
+        if (meta.get("filetype").equalsIgnoreCase("epub")) {
+            setEpub(book, meta);
+        }
+
+        book.setPublishDate(MetaReader
+                .parseDate(meta.getOrDefault("date", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString())));
 
         bookDAO.create(book);
-        Author author = authorsMap.getByName(authorName);
-        if (author == null) {
-            author = new Author(authorName);
-            authorDAO.create(author);
-            this.authorsMap.add(author);
-        }
-        BookAuthor ba = new BookAuthor(book.getId(), author.getId());
-        try {
-            bookAuthorDAO.create(ba);
-        } catch (DAOException e) {
-            throw new DAOException(e.getMessage(), e);
-        }
+        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
+        Author author = createAuthorFromName(authorName);
+        book.setPath(getRelativePathToBook(author.getName(), book.getTitle(), book.getId()));
+        bookDAO.update(book);
+        createBookAuthorLink(book.getId(), author.getId());
+
         return book;
     }
 
     private void setEpub(Book book, HashMap<String, String> meta) throws DAOException {
-        String filename = meta.get("filename");
         book.setIsbn(meta.getOrDefault("isbn", ""));
         book.setUuid(meta.getOrDefault("uuid", ""));
-        book.setTitle(meta.getOrDefault("title", filename));
-
         String publisherMeta = meta.get("publisher");
-        if (publisherMeta != null) {
-            Publisher publisher = publishersMap.getByName(meta.get("publisher"));
+        Publisher publisher = createPublisherFromName(publisherMeta);
+        book.setPublisher(publisher);
+    }
+
+    private void createBookAuthorLink(int bookId, int authorId) throws DAOException {
+        BookAuthor ba = new BookAuthor(bookId, authorId);
+        bookAuthorDAO.create(ba);
+    }
+
+    private Author createAuthorFromName(String name) throws DAOException {
+        Author author = authorsMap.getByName(name);
+        if (author == null) {
+            author = new Author(name);
+            authorDAO.create(author);
+            this.authorsMap.add(author);
+        }
+        return author;
+    }
+
+    private Publisher createPublisherFromName(String publisherName) throws DAOException {
+        if (publisherName != null) {
+            Publisher publisher = publishersMap.getByName(publisherName);
             if (publisher == null) {
-                publisher = new Publisher(publisherMeta);
+                publisher = new Publisher(publisherName);
                 publisherDAO.create(publisher);
                 this.publishersMap.add(publisher);
             }
-            book.setPublisher(publisher);
+            return publisher;
         }
-
-        if (meta.get("date") != null)
-            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
-    }
-
-    private void setPDF(Book book, HashMap<String, String> meta) {
-        String filename = meta.get("filename");
-        book.setTitle(meta.getOrDefault("title", filename));
-        if (meta.get("date") != null)
-            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
+        return null;
     }
 
     public Set<Series> getSeries() {

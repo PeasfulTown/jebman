@@ -61,7 +61,6 @@ CREATE TABLE IF NOT EXISTS books (
     NOT NULL
     CONSTRAINT df_books_dm DEFAULT (strftime('%Y-%m-%dT%H:%M:%S', 'now')),
   path TEXT 
-    NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS books_authors_link (

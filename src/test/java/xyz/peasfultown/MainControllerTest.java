@@ -6,6 +6,7 @@
 package xyz.peasfultown;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,13 +14,12 @@ import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
 import xyz.peasfultown.helpers.MetadataReaderException;
+import xyz.peasfultown.helpers.TreeDeleter;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +33,11 @@ public class MainControllerTest {
     private static final Path dbPath = mainPath.resolve("metadata.db");
     static MainController mc = null;
 
+    @BeforeAll
+    static void setup() {
+        ApplicationConfig.setMainPath(mainPath);
+    }
+
     @AfterEach
     void cleanupEach() {
         cleanupPath(mainPath);
@@ -44,7 +49,7 @@ public class MainControllerTest {
         try {
             mc = new MainController();
 
-            assertTrue(Files.exists(mainPath));
+            assertTrue(Files.exists(dbPath));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
@@ -190,12 +195,72 @@ public class MainControllerTest {
 
     @Test
     void deleteBookRemovesBookFromFileSystem() {
+        logger.info("Check book removed from filepath on delete");
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+
+            SearchableRecordSet<Book> books = (SearchableRecordSet<Book>) mc.getBooks();
+
+            Book frankenstein = books.getByName("Frankenstein");
+            Path filePath = ApplicationConfig.MAIN_PATH.resolve(frankenstein.getPath());
+            logger.info("Book Path: {}", filePath);
+            assertTrue(Files.exists(filePath));
+            mc.removeBook(frankenstein.getId());
+            assertFalse(Files.exists(filePath));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+    }
+
+    @Test
+    void deleteBookRemovesRecordFromDatabase() {
+        logger.info("Check book record removed from database upon delete");
+        // TODO: finish
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+
+            SearchableRecordSet<Book> books = (SearchableRecordSet<Book>) mc.getBooks();
+            int initialSize = books.size();
+            Book frankenstein = books.getByName("Frankenstein");
+            assertNotNull(frankenstein);
+
+            SearchableRecordSet<Publisher> publishers = (SearchableRecordSet<Publisher>) new JDBCPublisherDAO().readAll();
+            SearchableRecordSet<Series> series = (SearchableRecordSet<Series>) new JDBCSeriesDAO().readAll();
+
+            JDBCBookDAO bookDAO = new JDBCBookDAO(series, publishers);
+
+            assertNotNull(bookDAO.read(frankenstein.getId()));
+            mc.removeBook(frankenstein);
+            books = (SearchableRecordSet<Book>) mc.getBooks();
+            int finalSize = books.size();
+            assertNull(bookDAO.read(frankenstein.getId()));
+            assertTrue(initialSize > finalSize);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+    }
+
+    @Test
+    void addFormatAddsFileToBookDirectory() {
+        logger.info("Check add book format adds file to the book directory");
         // TODO: finish
         fail();
     }
 
     @Test
-    void updateBookInfo() {
+    void removeFormatRemovesFileFromDirectory() {
+        logger.info("Check remove book format will delete it from the directory");
+        // TODO: finish
+        fail();
+    }
+
+    @Test
+    void removeLastBookFormatAvailableDeletesDirectory() {
+        logger.info("Check remove book format will delete it from the directory");
         // TODO: finish
         fail();
     }
@@ -218,33 +283,6 @@ public class MainControllerTest {
         }
 
         assertFalse(Files.exists(filePath));
-    }
-}
-
-class TreeDeleter implements FileVisitor<Path> {
-    @Override
-    public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-        return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-        System.out.format("Deleting \"%s\"%n", path);
-        Files.delete(path);
-        return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-        System.err.format("File visit failed: %s%n", e);
-        return FileVisitResult.CONTINUE;
-    }
-
-    @Override
-    public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
-        System.out.format("Deleting \"%s\"%n", path);
-        Files.delete(path);
-        return FileVisitResult.CONTINUE;
     }
 }
 
