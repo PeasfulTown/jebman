@@ -59,7 +59,7 @@ public class MetaReader {
         }
     }
 
-    public static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
+    private static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         try (PDDocument pdf = PDDocument.load(file.toFile())) {
             PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
             if (pdfInfo.getTitle() != null)
@@ -73,7 +73,7 @@ public class MetaReader {
         }
     }
 
-    public static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
+    private static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         if (!Files.exists(file))
             throw new MetadataReaderException("File not found.");
 
@@ -133,7 +133,7 @@ public class MetaReader {
                                 boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
                                 if (isUUID) {
                                     meta.putIfAbsent("uuid", parserText);
-                                } else {
+                                } else if (Pattern.matches(MetaReader.PATTERN_ISBN, parserText)) {
                                     meta.putIfAbsent("isbn", parserText);
                                 }
                             } else {
