@@ -63,7 +63,7 @@ public class JDBCAuthorDAO extends JDBCAbstractDAO<Author> {
     protected Author getObjectFromResultSet(ResultSet rs) throws DAOException {
         Author author = new Author();
         try {
-            author.setId(rs.getInt(rs.getInt("id")));
+            author.setId(rs.getInt("id"));
             author.setName(rs.getString("name"));
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
