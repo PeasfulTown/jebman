@@ -1,42 +1,63 @@
 package xyz.peasfultown.interfaces;
 
-import java.util.Scanner;
+import xyz.peasfultown.ApplicationConfig;
+import xyz.peasfultown.MainController;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Publisher;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.Set;
+
+import static java.lang.System.out;
 
 public class JebmanPrompt {
-    private static final Scanner scanner;
+    private static final int DEFAULT_MAX_CHAR_LENGTH_ID = 4;
+    private static final int DEFAULT_MAX_CHAR_LENGTH = 30;
+    // 4 spaces after
+    private static final int DEFAULT_MAX_CHAR_LENGTH_DATE = 14;
+    // 4 spaces after
+    private static final int DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME = 23;
+    private static char DELIM = '_';
+    private static MainController mc;
+    private final Prompter prompt;
+    private boolean continueProgram;
 
-    static {
-        scanner = new Scanner(System.in);
+    public JebmanPrompt(Prompter prompt, MainController mc) {
+        this.prompt = prompt;
+        this.mc = mc;
     }
 
-    public static void main(String[] args) {
-        while (true) {
+    public void start() {
+        continueProgram = true;
+        while (continueProgram) {
             prompt();
         }
     }
 
-    public static void usage() {
+    private void usage() {
         // TODO: add list sort (date added, title, etc.)
-        System.out.println("list                    List all books in store");
-        System.out.println("add [path/to/ebook]     Add ebook to library");
-        System.out.println("remove [id]             Remove book from library");
-        System.out.println("info [id]               Print book information");
-        System.out.println("quit                    Quit jebman");
-        System.out.println("exit                    Quit jebman");
+        out.println("list                    List all books in store");
+        out.println("add [path/to/ebook]     Add ebook to library");
+        out.println("remove [id]             Remove book from library");
+        out.println("info [id]               Print book information");
+        out.println("quit/exit               Quit jebman");
     }
 
-    private static void prompt() {
-        System.out.print("[jebman]# ");
-        String input = scanner.nextLine();
-
-        processInput(input);
+    private void prompt() {
+        String input = prompt.promptForInput("[jebman]# ");
+        continueProgram = processInput(input);
     }
 
-    private static boolean processInput(String input) {
+    private boolean processInput(String input) {
         String[] parts = input.split(" ");
 
         switch (parts[0]) {
             case "list":
+                out.println();
                 list();
                 break;
             case "add":
@@ -60,7 +81,7 @@ public class JebmanPrompt {
                 break;
             case "quit":
             case "exit":
-                System.exit(0);
+                return false;
             default:
                 System.out.println("Unrecognized Command");
                 usage();
@@ -70,39 +91,93 @@ public class JebmanPrompt {
         return true;
     }
 
-    private static boolean isNumber(String num) {
+    private boolean isNumber(String num) {
         try {
             Integer.valueOf(num);
         } catch (NumberFormatException e) {
-            System.out.println("Argument must be a number");
+            System.out.println("Argument must be a number.");
             return false;
         }
 
         return true;
     }
 
-    private static boolean enoughArgs(String[] inp) {
+    private boolean enoughArgs(String[] inp) {
         if (inp.length < 2 || inp[1].length() == 0) {
-            System.out.println("Not enough arguments");
+            System.out.println("Not enough arguments.");
             return false;
         }
         return true;
     }
 
-    private static void list() {
-        System.out.println("list files!");
+    private void list() {
+        Set<Book> books = mc.getBooks();
+        for (Book b : books) {
+            printBookItem(b);
+        }
     }
 
-    private static void add(String path) {
+    private void printBookItem(Book book) {
+        // TODO: finish
+        StringBuilder sb = new StringBuilder();
+
+        appendProperty(sb, String.valueOf(book.getId()), DEFAULT_MAX_CHAR_LENGTH_ID);
+        appendProperty(sb, book.getTitle(), DEFAULT_MAX_CHAR_LENGTH);
+        Publisher publisher = book.getPublisher();
+        appendProperty(sb, publisher != null ? publisher.getName() : "Unknown", DEFAULT_MAX_CHAR_LENGTH);
+        appendProperty(sb, getStringFromTimeStamp(book.getPublishDate()), DEFAULT_MAX_CHAR_LENGTH_DATE);
+        appendProperty(sb, getStringWithSecondsFromTimeStamp(book.getAddedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
+
+        System.out.println(sb);
+    }
+
+    private void appendProperty(StringBuilder sb, String strToAppend, int maxCharLength) {
+        int charLength = 0;
+        if (strToAppend != null) {
+            sb.append(strToAppend);
+            charLength = strToAppend.length();
+        }
+
+        if (maxCharLength == 0)
+            maxCharLength = DEFAULT_MAX_CHAR_LENGTH;
+
+        int diff = charLength - maxCharLength;
+        while (diff > 0) {
+            sb.deleteCharAt(sb.length() - 1);
+            diff--;
+        }
+
+        if (diff == 0) {
+            int ind = sb.length();
+            sb.replace(ind - 1, ind, "~");
+        }
+
+        while (charLength < maxCharLength) {
+            sb.append(DELIM);
+            charLength++;
+        }
+    }
+
+    private String getStringFromTimeStamp(Instant time) {
+        return LocalDate.ofInstant(time, ZoneId.systemDefault()).toString();
+    }
+
+    private String getStringWithSecondsFromTimeStamp(Instant time) {
+        return getStringFromTimeStamp(time) + " " +
+                LocalTime.ofInstant(time, ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS).toString();
+    }
+
+    private void add(String path) {
         System.out.println("add file!");
     }
 
-    private static void remove(int id) {
+    private void remove(int id) {
         System.out.println("remove file!");
     }
 
-    private static void info(int id) {
+    private void info(int id) {
         System.out.println("print file info!");
+        System.out.println(ApplicationConfig.MAIN_PATH);
     }
 
 }

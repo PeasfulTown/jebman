@@ -47,7 +47,7 @@ public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
     protected String getReadAllQuery() {
         return "SELECT B.*, P.name AS publisher_name, S.name AS series_name FROM books B " +
                 "LEFT JOIN publishers P ON B.publisher_id = P.id " +
-                "LEFT JOIN series S ON B.series_id = S.id;";
+                "LEFT JOIN series S ON B.series_id = S.id ORDER BY B.id ASC;";
     }
 
     @Override

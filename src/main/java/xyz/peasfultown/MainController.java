@@ -29,41 +29,24 @@ import java.util.Set;
  */
 public class MainController {
     private final Path mainPath;
-    private final SearchableRecordSet<Book> booksMap;
-    private final SearchableRecordSet<Series> seriesMap;
-    private final SearchableRecordSet<Publisher> publishersMap;
-    private final SearchableRecordSet<Author> authorsMap;
-    private final GenericDAO<Book> bookDAO;
-    private final GenericDAO<Series> seriesDAO;
-    private final GenericDAO<Publisher> publisherDAO;
-    private final GenericDAO<Author> authorDAO;
-    private final GenericDAO<BookAuthor> bookAuthorDAO;
+    private SearchableRecordSet<Book> booksMap;
+    private SearchableRecordSet<Series> seriesMap;
+    private SearchableRecordSet<Publisher> publishersMap;
+    private SearchableRecordSet<Author> authorsMap;
+    private GenericDAO<Book> bookDAO;
+    private GenericDAO<Series> seriesDAO;
+    private GenericDAO<Publisher> publisherDAO;
+    private GenericDAO<Author> authorDAO;
+    private GenericDAO<BookAuthor> bookAuthorDAO;
 
     /**
      * Default constructor creates a directory for the program at the user's `Documents` directory.
      *
      * @throws SQLException any SQL exception.
      */
-    public MainController() throws SQLException, DAOException {
+    public MainController() throws SQLException {
         this.mainPath = ApplicationConfig.MAIN_PATH;
         ready();
-
-        try {
-            this.publisherDAO = new JDBCPublisherDAO();
-            this.seriesDAO = new JDBCSeriesDAO();
-            this.authorDAO = new JDBCAuthorDAO();
-            this.bookAuthorDAO = new JDBCBookAuthorDAO();
-
-            this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
-            this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
-            this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
-
-            this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
-            this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
-        } catch (DAOException e) {
-            throw new DAOException("Failed to query book props.", e);
-        }
-
     }
 
     private void ready() throws SQLException {
@@ -81,6 +64,26 @@ public class MainController {
             ScriptRunner.runScript(con, new File("database.sql"));
         } catch (SQLException e) {
             throw new SQLException(e.getMessage(), e);
+        }
+
+        populateCollections();
+    }
+
+    public void populateCollections() {
+        try {
+            this.publisherDAO = new JDBCPublisherDAO();
+            this.seriesDAO = new JDBCSeriesDAO();
+            this.authorDAO = new JDBCAuthorDAO();
+            this.bookAuthorDAO = new JDBCBookAuthorDAO();
+
+            this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
+            this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
+            this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
+
+            this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
+            this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
+        } catch (DAOException e) {
+            System.err.println("Unable to populate collections.");
         }
     }
 

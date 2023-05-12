@@ -1,8 +1,8 @@
 package xyz.peasfultown.domain;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
-public class SearchableRecordSet<R extends Record> extends HashSet<R> {
+public class SearchableRecordSet<R extends Record> extends LinkedHashSet<R> {
     public R getById(int id) {
         for (R r : this) {
             if (r.getId() == id)

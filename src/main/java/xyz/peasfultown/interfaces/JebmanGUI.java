@@ -10,10 +10,11 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import xyz.peasfultown.MainController;
 
 public class JebmanGUI extends Application {
-    public static void main(String[] args) {
-        launch(args);
+    public static void start(MainController mc) {
+        launch();
     }
 
     @Override
@@ -97,6 +98,4 @@ public class JebmanGUI extends Application {
 
         return hbox;
     }
-
-
 }
