@@ -4,6 +4,7 @@ import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
+import xyz.peasfultown.domain.Series;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,7 +16,7 @@ import java.util.Set;
 import static java.lang.System.out;
 
 public class JebmanPrompt {
-    private static final int DEFAULT_MAX_CHAR_LENGTH_ID = 4;
+    private static final int DEFAULT_MAX_CHAR_LENGTH_NUMBER = 4;
     private static final int DEFAULT_MAX_CHAR_LENGTH = 25;
     // 4 spaces after
     private static final int DEFAULT_MAX_CHAR_LENGTH_DATE = 14;
@@ -122,13 +123,17 @@ public class JebmanPrompt {
         // TODO: finish
         StringBuilder sb = new StringBuilder();
 
-        appendPropertySpaces(sb, String.valueOf(book.getId()), DEFAULT_MAX_CHAR_LENGTH_ID);
+        appendPropertySpaces(sb, String.valueOf(book.getId()), DEFAULT_MAX_CHAR_LENGTH_NUMBER);
         appendPropertySpaces(sb, book.getTitle(), DEFAULT_MAX_CHAR_LENGTH);
+        appendPropertySpaces(sb, mc.getBookAuthorByBookId(book.getId()).getName(), DEFAULT_MAX_CHAR_LENGTH);
+        Series series = book.getSeries();
+        appendPropertySpaces(sb, series != null ? series.getName() : "(No series)", DEFAULT_MAX_CHAR_LENGTH);
+        appendPropertySpaces(sb, String.valueOf(book.getSeriesNumber()), DEFAULT_MAX_CHAR_LENGTH_NUMBER);
         Publisher publisher = book.getPublisher();
         appendPropertySpaces(sb, publisher != null ? publisher.getName() : "Unknown", DEFAULT_MAX_CHAR_LENGTH);
-        appendPropertySpaces(sb, mc.getBookAuthorByBookId(book.getId()).getName(), DEFAULT_MAX_CHAR_LENGTH);
         appendPropertySpaces(sb, getStringFromTimeStamp(book.getPublishDate()), DEFAULT_MAX_CHAR_LENGTH_DATE);
         appendPropertySpaces(sb, getStringWithSecondsFromTimeStamp(book.getAddedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
+        appendPropertySpaces(sb, getStringWithSecondsFromTimeStamp(book.getModifiedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
 
         System.out.println(sb);
     }
@@ -165,7 +170,7 @@ public class JebmanPrompt {
     }
 
     private String getStringWithSecondsFromTimeStamp(Instant time) {
-        return getStringFromTimeStamp(time) + " " +
+        return getStringFromTimeStamp(time) + "@" +
                 LocalTime.ofInstant(time, ZoneId.systemDefault()).truncatedTo(ChronoUnit.SECONDS).toString();
     }
 
