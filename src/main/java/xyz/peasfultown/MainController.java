@@ -33,6 +33,7 @@ public class MainController {
     private SearchableRecordSet<Series> seriesMap;
     private SearchableRecordSet<Publisher> publishersMap;
     private SearchableRecordSet<Author> authorsMap;
+    private SearchableRecordSet<BookAuthor> bookAuthorMap;
     private GenericDAO<Book> bookDAO;
     private GenericDAO<Series> seriesDAO;
     private GenericDAO<Publisher> publisherDAO;
@@ -79,6 +80,7 @@ public class MainController {
             this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
             this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
             this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
+            this.bookAuthorMap = (SearchableRecordSet<BookAuthor>) this.getAllBookAuthorLinks();
 
             this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
             this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
@@ -133,10 +135,6 @@ public class MainController {
         booksMap.remove(book);
     }
 
-    public void updateBook(Book book) throws DAOException {
-        bookDAO.update(book);
-    }
-
     private Set<Publisher> getAllPublishers() throws DAOException {
         return publisherDAO.readAll();
     }
@@ -149,8 +147,21 @@ public class MainController {
         return authorDAO.readAll();
     }
 
+    private Set<BookAuthor> getAllBookAuthorLinks() throws DAOException {
+        return bookAuthorDAO.readAll();
+    }
+
     private Set<Book> getAllBooks() throws DAOException {
         return bookDAO.readAll();
+    }
+
+    public Author getBookAuthorByBookId(int id) {
+        for(BookAuthor ba : bookAuthorMap) {
+            if (ba.getBookId() == id)
+                return this.authorsMap.getById(ba.getAuthorId());
+        }
+        System.out.println("Cannot find Author");
+        return null;
     }
 
     public Path getMainPath() {
@@ -198,7 +209,14 @@ public class MainController {
         bookDAO.update(book);
         createBookAuthorLink(book.getId(), author.getId());
 
+        addBookAuthorLink(book.getId(), author.getId());
         return book;
+    }
+
+    private void addBookAuthorLink(int bookId, int authorId) throws DAOException {
+        BookAuthor ba = new BookAuthor(bookId, authorId);
+        this.bookAuthorDAO.create(ba);
+        this.bookAuthorMap.add(ba);
     }
 
     private void setEpub(Book book, HashMap<String, String> meta) throws DAOException {

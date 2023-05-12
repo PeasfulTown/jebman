@@ -121,17 +121,18 @@ public class JebmanPrompt {
         // TODO: finish
         StringBuilder sb = new StringBuilder();
 
-        appendProperty(sb, String.valueOf(book.getId()), DEFAULT_MAX_CHAR_LENGTH_ID);
-        appendProperty(sb, book.getTitle(), DEFAULT_MAX_CHAR_LENGTH);
+        appendPropertySpaces(sb, String.valueOf(book.getId()), DEFAULT_MAX_CHAR_LENGTH_ID);
+        appendPropertySpaces(sb, book.getTitle(), DEFAULT_MAX_CHAR_LENGTH);
         Publisher publisher = book.getPublisher();
-        appendProperty(sb, publisher != null ? publisher.getName() : "Unknown", DEFAULT_MAX_CHAR_LENGTH);
-        appendProperty(sb, getStringFromTimeStamp(book.getPublishDate()), DEFAULT_MAX_CHAR_LENGTH_DATE);
-        appendProperty(sb, getStringWithSecondsFromTimeStamp(book.getAddedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
+        appendPropertySpaces(sb, publisher != null ? publisher.getName() : "Unknown", DEFAULT_MAX_CHAR_LENGTH);
+        appendPropertySpaces(sb, mc.getBookAuthorByBookId(book.getId()).getName(), DEFAULT_MAX_CHAR_LENGTH);
+        appendPropertySpaces(sb, getStringFromTimeStamp(book.getPublishDate()), DEFAULT_MAX_CHAR_LENGTH_DATE);
+        appendPropertySpaces(sb, getStringWithSecondsFromTimeStamp(book.getAddedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
 
         System.out.println(sb);
     }
 
-    private void appendProperty(StringBuilder sb, String strToAppend, int maxCharLength) {
+    private void appendPropertySpaces(StringBuilder sb, String strToAppend, int maxCharLength) {
         int charLength = 0;
         if (strToAppend != null) {
             sb.append(strToAppend);
