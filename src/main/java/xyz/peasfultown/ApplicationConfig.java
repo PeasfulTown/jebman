@@ -76,7 +76,7 @@ public class ApplicationConfig {
     /**
      * Read path string from `application.properties` file and set it for the application.
      */
-    private static void setMainPathFromConfigFile() {
+    private static void loadPathFromConfigFile() {
         Parameters params = new Parameters();
         FileBasedConfigurationBuilder<FileBasedConfiguration> builder =
                 new FileBasedConfigurationBuilder<FileBasedConfiguration>(PropertiesConfiguration.class)
