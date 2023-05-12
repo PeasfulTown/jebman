@@ -16,12 +16,13 @@ import static java.lang.System.out;
 
 public class JebmanPrompt {
     private static final int DEFAULT_MAX_CHAR_LENGTH_ID = 4;
-    private static final int DEFAULT_MAX_CHAR_LENGTH = 30;
+    private static final int DEFAULT_MAX_CHAR_LENGTH = 25;
     // 4 spaces after
     private static final int DEFAULT_MAX_CHAR_LENGTH_DATE = 14;
     // 4 spaces after
     private static final int DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME = 23;
     private static char DELIM = '_';
+    private static char TRUNCATE_SYMBOL = '~';
     private static MainController mc;
     private final Prompter prompt;
     private boolean continueProgram;
@@ -150,7 +151,7 @@ public class JebmanPrompt {
 
         if (diff == 0) {
             int ind = sb.length();
-            sb.replace(ind - 1, ind, "~");
+            sb.replace(ind - 2, ind, String.valueOf(TRUNCATE_SYMBOL) + DELIM);
         }
 
         while (charLength < maxCharLength) {
