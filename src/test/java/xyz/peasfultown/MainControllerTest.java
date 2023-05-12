@@ -13,13 +13,10 @@ import org.slf4j.LoggerFactory;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
-import xyz.peasfultown.helpers.MetadataReaderException;
-import xyz.peasfultown.helpers.TreeDeleter;
+import static xyz.peasfultown.TestHelpers.*;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -265,25 +262,6 @@ public class MainControllerTest {
         fail();
     }
 
-    void insertTestBooks(MainController mc) throws DAOException, MetadataReaderException, IOException {
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("machine-stops.pdf").getFile()));
-    }
-
-    void cleanupPath(Path filePath) {
-        logger.info("Cleaning up path");
-        try {
-            TreeDeleter td = new TreeDeleter();
-            Files.walkFileTree(filePath, td);
-        } catch (IOException e) {
-            logger.error("Cleaning up test file failed.", e);
-            fail();
-        }
-
-        assertFalse(Files.exists(filePath));
-    }
 }
 
 /**
