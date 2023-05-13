@@ -69,14 +69,11 @@ public class MetaReader {
             if (pdfInfo.getCreationDate() != null)
                 meta.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
         } catch (Exception e) {
-            throw new MetadataReaderException("Problem while setting getting PDF metadata.", e);
+            throw new MetadataReaderException("Problem while getting PDF metadata.", e);
         }
     }
 
     private static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
-        if (!Files.exists(file))
-            throw new MetadataReaderException("File not found.");
-
         try {
             processXML(file.toFile(), meta);
         } catch (Exception e) {
