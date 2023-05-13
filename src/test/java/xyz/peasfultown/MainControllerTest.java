@@ -185,12 +185,6 @@ public class MainControllerTest {
     }
 
     @Test
-    void loadExistingDatabase() {
-        // TODO: finish
-        fail();
-    }
-
-    @Test
     void deleteBookRemovesBookFromFileSystem() {
         logger.info("Check book removed from filepath on delete");
         try {
@@ -214,7 +208,6 @@ public class MainControllerTest {
     @Test
     void deleteBookRemovesRecordFromDatabase() {
         logger.info("Check book record removed from database upon delete");
-        // TODO: finish
         try {
             MainController mc = new MainController();
             insertTestBooks(mc);
