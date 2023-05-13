@@ -89,7 +89,7 @@ public class JebmanPrompt {
             case "exit":
                 return false;
             default:
-                System.out.println("Unrecognized Command");
+                out.println("Unrecognized Command");
                 usage();
                 break;
         }
@@ -101,7 +101,7 @@ public class JebmanPrompt {
         try {
             Integer.valueOf(num);
         } catch (NumberFormatException e) {
-            System.out.println("Argument must be a number.");
+            out.println("Argument must be a number.");
             return false;
         }
 
@@ -110,7 +110,7 @@ public class JebmanPrompt {
 
     private boolean enoughArgs(String[] inp) {
         if (inp.length < 2 || inp[1].length() == 0) {
-            System.out.println("Not enough arguments.");
+            out.println("Not enough arguments.");
             return false;
         }
         return true;
@@ -140,7 +140,7 @@ public class JebmanPrompt {
         appendPropertySpaces(sb, getStringWithSecondsFromTimeStamp(book.getAddedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
         appendPropertySpaces(sb, getStringWithSecondsFromTimeStamp(book.getModifiedDate()), DEFAULT_MAX_CHAR_LENGTH_DATE_WITH_TIME);
 
-        System.out.println(sb);
+        out.println(sb);
     }
 
     private void appendPropertySpaces(StringBuilder sb, String strToAppend, int maxCharLength) {
@@ -182,14 +182,14 @@ public class JebmanPrompt {
     private void add(String path) {
         try {
             mc.insertBook(path);
+            out.println("Book added to jebman!");
         } catch (DAOException e) {
-            err.format("Failed to create record of book in database: %s%n", e.getMessage());
+            out.format("Failed to create record of book in database: %s%n", e.getMessage());
         } catch (IOException e) {
-            err.format("Failed to add book to jebman library: %s%n", e.getMessage());
+            out.format("Failed to add book to jebman library: %s%n", e.getMessage());
         } catch (MetadataReaderException e) {
-            err.format("Failed to read book metadata: %s%n", e.getMessage());
+            out.format("Failed to read book metadata: %s%n", e.getMessage());
         }
-        out.println("Book added to jebman!");
     }
 
     private void remove(int id) {
@@ -203,8 +203,10 @@ public class JebmanPrompt {
     }
 
     private void info(int id) {
-        System.out.println("print file info!");
-        System.out.println(ApplicationConfig.MAIN_PATH);
+        out.println("print file info!");
+        out.println(ApplicationConfig.MAIN_PATH);
     }
 
+    private void printBookInfo(Book book) {
+    }
 }

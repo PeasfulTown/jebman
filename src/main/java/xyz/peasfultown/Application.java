@@ -45,7 +45,7 @@ public class Application {
         try {
             mc = new MainController();
         } catch (SQLException e) {
-            System.err.format("Unable to run database creation script.", e);
+            System.err.format("Unable to run database creation script: %s%n", e.getMessage());
             System.exit(-1);
         }
 
