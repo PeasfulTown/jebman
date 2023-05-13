@@ -17,7 +17,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
 import static java.lang.System.out;
-import static java.lang.System.err;
 
 public class JebmanPrompt {
     private static final int DEFAULT_MAX_CHAR_LENGTH_NUMBER = 4;
@@ -37,7 +36,7 @@ public class JebmanPrompt {
         this.mc = mc;
     }
 
-    public void start() {
+    public void run() {
         continueProgram = true;
         while (continueProgram) {
             prompt();

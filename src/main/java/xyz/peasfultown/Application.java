@@ -54,6 +54,7 @@ public class Application {
         } else {
             JebmanPrompt prompt = new JebmanPrompt(new Prompter(System.in, System.out), mc);
             prompt.start();
+            prompt.run();
         }
     }
 
