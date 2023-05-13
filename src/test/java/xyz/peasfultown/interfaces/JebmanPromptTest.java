@@ -12,7 +12,7 @@ import xyz.peasfultown.MainController;
 import java.io.ByteArrayInputStream;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static xyz.peasfultown.TestHelpers.cleanupPath;
 import static xyz.peasfultown.TestHelpers.insertTestBooks;
 
@@ -61,6 +61,7 @@ class JebmanPromptTest {
         MainController mc = null;
         try {
             mc = new MainController();
+            assertEquals(0, mc.getBooks().size());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
@@ -75,6 +76,34 @@ class JebmanPromptTest {
             Prompter prompter = new Prompter(in, System.out);
             JebmanPrompt jebman = new JebmanPrompt(prompter, mc);
             jebman.start();
+            assertEquals(1, mc.getBooks().size());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+    }
+
+    @Test
+    void testRemoveBook() {
+        MainController mc = null;
+        try {
+            mc = new MainController();
+            insertTestBooks(mc);
+            assertEquals(4, mc.getBooks().size());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+
+        try {
+            String testInp = "list\nremove 1\nlist\nquit\n";
+
+            ByteArrayInputStream in = new ByteArrayInputStream(testInp.getBytes());
+            Prompter prompter = new Prompter(in, System.out);
+            System.setIn(in);
+            JebmanPrompt jebman = new JebmanPrompt(prompter, mc);
+            jebman.start();
+            assertEquals(3, mc.getBooks().size());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();

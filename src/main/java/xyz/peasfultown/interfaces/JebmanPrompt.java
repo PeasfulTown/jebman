@@ -193,7 +193,13 @@ public class JebmanPrompt {
     }
 
     private void remove(int id) {
-        System.out.println("remove file!");
+        try {
+            mc.removeBook(id);
+        } catch (DAOException e) {
+            out.format("Unable to remove book book from database: %s%n", e.getMessage());
+        } catch (IOException e) {
+            out.format("Unable to remove book from filesystem: %s%n", e.getMessage());
+        }
     }
 
     private void info(int id) {
