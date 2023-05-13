@@ -89,6 +89,11 @@ public class MainController {
         }
     }
 
+    public void insertBook(String filePath) throws DAOException, IOException, MetadataReaderException {
+        Path file = Path.of(filePath);
+        insertBook(file);
+    }
+
     /**
      * Copy book over to main program directory, and insert a record of the book to SQLite database.
      *
@@ -97,13 +102,6 @@ public class MainController {
      * @throws XMLStreamException
      */
     public void insertBook(Path file) throws DAOException, IOException, MetadataReaderException {
-        // TODO: insert author record if not already present
-        String[] parts = file.getFileName().toString().split("\\.");
-
-        if (parts.length < 2) {
-            throw new IOException(String.format("Unable to determine %s filetype.", file.getFileName()));
-        }
-
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {

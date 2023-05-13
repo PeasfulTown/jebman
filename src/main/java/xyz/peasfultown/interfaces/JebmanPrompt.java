@@ -2,10 +2,13 @@ package xyz.peasfultown.interfaces;
 
 import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.MainController;
+import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
 import xyz.peasfultown.domain.Series;
+import xyz.peasfultown.helpers.MetadataReaderException;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -14,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
 import static java.lang.System.out;
+import static java.lang.System.err;
 
 public class JebmanPrompt {
     private static final int DEFAULT_MAX_CHAR_LENGTH_NUMBER = 4;
@@ -117,6 +121,7 @@ public class JebmanPrompt {
         for (Book b : books) {
             printBookItem(b);
         }
+        out.println();
     }
 
     private void printBookItem(Book book) {
@@ -175,7 +180,16 @@ public class JebmanPrompt {
     }
 
     private void add(String path) {
-        System.out.println("add file!");
+        try {
+            mc.insertBook(path);
+        } catch (DAOException e) {
+            err.format("Failed to create record of book in database: %s%n", e.getMessage());
+        } catch (IOException e) {
+            err.format("Failed to add book to jebman library: %s%n", e.getMessage());
+        } catch (MetadataReaderException e) {
+            err.format("Failed to read book metadata: %s%n", e.getMessage());
+        }
+        out.println("Book added to jebman!");
     }
 
     private void remove(int id) {
