@@ -28,7 +28,7 @@ public class TreeDeleter implements FileVisitor<Path> {
 
     @Override
     public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
-        System.out.format("Deleting \"%s\"%n", path);
+        System.out.format("Deleting directory \"%s\"%n", path);
         Files.delete(path);
         return FileVisitResult.CONTINUE;
     }
