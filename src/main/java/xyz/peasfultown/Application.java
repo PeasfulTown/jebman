@@ -1,8 +1,12 @@
 package xyz.peasfultown;
 
+import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.interfaces.JebmanGUI;
 import xyz.peasfultown.interfaces.JebmanPrompt;
 import xyz.peasfultown.interfaces.Prompter;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class Application {
     private static boolean gui;
@@ -40,8 +44,9 @@ public class Application {
 
         try {
             mc = new MainController();
-        } catch (Exception e) {
-            System.err.format("Unable to create controller: %s%n", e);
+        } catch (SQLException e) {
+            System.err.format("Unable to run database creation script.", e);
+            System.exit(-1);
         }
 
         if (gui) {
