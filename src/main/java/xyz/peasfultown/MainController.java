@@ -14,6 +14,7 @@ import xyz.peasfultown.helpers.*;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -102,6 +103,9 @@ public class MainController {
      * @throws XMLStreamException
      */
     public void insertBook(Path file) throws DAOException, IOException, MetadataReaderException {
+        if (!Files.exists(file))
+            throw new FileNotFoundException("File does not exist.");
+
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {
