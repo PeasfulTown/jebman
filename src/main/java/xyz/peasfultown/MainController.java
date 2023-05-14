@@ -272,6 +272,10 @@ public class MainController {
     public Set<Book> getBooks() {
         return this.booksMap;
     }
+
+    public Set<BookAuthor> getBookAuthorLinks() {
+        return this.bookAuthorMap;
+    }
 }
 
 /**
