@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.domain.*;
 
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -90,16 +91,19 @@ public class JebmanGUI extends Application {
     private TableView<BookAuthorView> getBookTable() {
         TableView<BookAuthorView> table = new TableView<BookAuthorView>();
         table.setEditable(true);
-        TableColumn<BookAuthorView, Integer> idCol = new TableColumn<BookAuthorView, Integer>("ID");
-        TableColumn<BookAuthorView, String> titleCol = new TableColumn<BookAuthorView, String>("Title");
-        TableColumn<BookAuthorView, String> publisherCol = new TableColumn<BookAuthorView, String>("Publisher");
-        TableColumn<BookAuthorView, String> authorCol = new TableColumn<BookAuthorView, String>("Author");
+        TableColumn<BookAuthorView, Integer> idCol = new TableColumn<>("ID");
+        TableColumn<BookAuthorView, String> titleCol = new TableColumn<>("Title");
+        TableColumn<BookAuthorView, String> publisherCol = new TableColumn<>("Publisher");
+        TableColumn<BookAuthorView, String> authorCol = new TableColumn<>("Author");
         ObservableSet<BookAuthorView> bav = collectBookAuthorViewItems();
-        ObservableList<BookAuthorView> bal = FXCollections.observableList(bav.stream().collect(Collectors.toList()));
+        ObservableList<BookAuthorView> bal = FXCollections.observableList(new ArrayList<>(bav));
 
         idCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().idProperty().asObject());
         titleCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().titleProperty());
-        publisherCol.setCellValueFactory(null);
+        publisherCol.setCellValueFactory(f -> f.getValue()
+                .bookProperty().getValue().getPublisher() != null
+                ? f.getValue().bookProperty().getValue().publisherProperty().getValue().nameProperty()
+                : null);
         authorCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().nameProperty());
 
         table.getColumns().addAll(idCol, titleCol, publisherCol, authorCol);
