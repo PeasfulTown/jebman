@@ -110,11 +110,22 @@ public class JebmanGUI extends Application {
     private TableView<BookAuthorView> getBookTable() {
         TableView<BookAuthorView> table = new TableView<>();
         table.setEditable(true);
+
         TableColumn<BookAuthorView, Integer> idCol = new TableColumn<>("ID");
         TableColumn<BookAuthorView, String> titleCol = new TableColumn<>("Title");
         TableColumn<BookAuthorView, String> publisherCol = new TableColumn<>("Publisher");
+
         TableColumn<BookAuthorView, Integer> authorIdCol = new TableColumn<>("Author ID");
         TableColumn<BookAuthorView, String> authorNameCol = new TableColumn<>("Author");
+
+        TableColumn<BookAuthorView, Integer> seriesIdCol = new TableColumn<>("Series ID");
+        TableColumn<BookAuthorView, String> seriesNameCol = new TableColumn<>("Series");
+        TableColumn<BookAuthorView, Double> seriesNumberCol = new TableColumn<>("Series Index");
+
+        TableColumn<BookAuthorView, String> datePublishedCol = new TableColumn<>("Date Published");
+        TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
+        TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
+
         data.addAll(collectBookAuthorViewItems());
 
         idCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().idProperty().asObject());
@@ -124,10 +135,25 @@ public class JebmanGUI extends Application {
                 ? f.getValue().bookProperty().getValue().publisherProperty().getValue().nameProperty()
                 : null);
 
-        authorIdCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().idProperty().asObject());
-        authorNameCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().nameProperty());
+        authorIdCol.setCellValueFactory(f -> f.getValue().getAuthor().idProperty().asObject());
+        authorNameCol.setCellValueFactory(f -> f.getValue().getAuthor().nameProperty());
 
-        table.getColumns().addAll(new ArrayList<>(Arrays.asList(idCol, titleCol, publisherCol, authorIdCol, authorNameCol)));
+        seriesIdCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
+                ? f.getValue().getBook().getSeries().idProperty().asObject()
+                : null);
+        seriesNameCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
+                ? f.getValue().getBook().getSeries().nameProperty()
+                : null);
+        seriesNumberCol.setCellValueFactory(f -> f.getValue().getBook().seriesNumberProperty().asObject());
+
+        datePublishedCol.setCellValueFactory(f -> f.getValue().getBook().datePublishedProperty());
+        dateAddedCol.setCellValueFactory(f -> f.getValue().getBook().dateAddedProperty());
+        dateModifiedCol.setCellValueFactory(f -> f.getValue().getBook().dateModifiedProperty());
+
+        table.getColumns().addAll(new ArrayList<>(
+                Arrays.asList(idCol, titleCol, publisherCol, authorIdCol, authorNameCol,
+                        seriesIdCol, seriesNameCol, seriesNumberCol,
+                        datePublishedCol, dateAddedCol, dateModifiedCol)));
         table.setItems(data);
 
         return table;
