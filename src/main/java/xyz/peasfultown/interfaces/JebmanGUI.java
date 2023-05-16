@@ -16,12 +16,14 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import xyz.peasfultown.MainController;
+import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.domain.*;
 
 import java.awt.*;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,7 +113,8 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, Integer> idCol = new TableColumn<>("ID");
         TableColumn<BookAuthorView, String> titleCol = new TableColumn<>("Title");
         TableColumn<BookAuthorView, String> publisherCol = new TableColumn<>("Publisher");
-        TableColumn<BookAuthorView, String> authorCol = new TableColumn<>("Author");
+        TableColumn<BookAuthorView, Integer> authorIdCol = new TableColumn<>("Author ID");
+        TableColumn<BookAuthorView, String> authorNameCol = new TableColumn<>("Author");
         data.addAll(collectBookAuthorViewItems());
 
         idCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().idProperty().asObject());
@@ -120,9 +123,11 @@ public class JebmanGUI extends Application {
                 .bookProperty().getValue().getPublisher() != null
                 ? f.getValue().bookProperty().getValue().publisherProperty().getValue().nameProperty()
                 : null);
-        authorCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().nameProperty());
 
-        table.getColumns().addAll(new ArrayList<>(Arrays.asList(idCol, titleCol, publisherCol, authorCol)));
+        authorIdCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().idProperty().asObject());
+        authorNameCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().nameProperty());
+
+        table.getColumns().addAll(new ArrayList<>(Arrays.asList(idCol, titleCol, publisherCol, authorIdCol, authorNameCol)));
         table.setItems(data);
 
         return table;
@@ -145,12 +150,19 @@ public class JebmanGUI extends Application {
             if (ebookFile != null) {
                 try {
                     mc.insertBook(Path.of(ebookFile.getPath()));
-                    addBookPublisherIfNotExists(mc.getLastInsertedPublisher(), this.publishers);
-                    addBookAuthorIfNotExists(mc.getLastInsertedAuthor(), this.authors);
+                    addPublisherViewIfNotExists(mc.getLastInsertedPublisher(), this.publishers);
+                    addAuthorViewIfNotExists(mc.getLastInsertedAuthor(), this.authors);
                     this.data.add(createBookAuthorView(mc.getLastInsertedBook(), this.series, this.publishers, mc.getBookAuthorLinks(), authors));
                     Alert alert = new Alert(Alert.AlertType.INFORMATION, ebookFile.getName() + " added to library!", ButtonType.OK);
                     alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
                     alert.getDialogPane().setMinWidth(Region.USE_PREF_SIZE);
+                    alert.setResizable(true);
+                    alert.show();
+                } catch (RecordAlreadyExistsException ex) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Ebook already exists.");
+                    alert.setHeaderText("Ebook already exists in Jebman library.");
+                    alert.setContentText(ex.getMessage());
                     alert.setResizable(true);
                     alert.show();
                 } catch (Exception ex) {
@@ -158,6 +170,7 @@ public class JebmanGUI extends Application {
                     alert.setTitle("Exception occurred");
                     alert.setHeaderText("Exception occurred while adding ebook to jebman library");
                     alert.setContentText(ex.getMessage());
+                    alert.setResizable(true);
 
                     StringWriter stringWriter = new StringWriter();
                     PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -228,7 +241,7 @@ public class JebmanGUI extends Application {
     }
 
     private static BookView createBookView(Book book, SeriesView series, PublisherView publisher) {
-        BookView bv  = new BookView(book.getId(), book.getIsbn(), book.getUuid(), book.getTitle(), series, book.getSeriesNumber(),
+        BookView bv = new BookView(book.getId(), book.getIsbn(), book.getUuid(), book.getTitle(), series, book.getSeriesNumber(),
                 publisher, book.getPublishDate().toString(), book.getAddedDate().toString(), book.getModifiedDate().toString());
         return bv;
     }
@@ -237,7 +250,7 @@ public class JebmanGUI extends Application {
         return getBookAuthor(book.getId(), bookAuthorLinks, authors);
     }
 
-    private static void addBookAuthorIfNotExists(Author author, Collection<AuthorView> authors) {
+    private static void addAuthorViewIfNotExists(Author author, Collection<AuthorView> authors) {
         for (AuthorView av : authors) {
             if (av.getName().equals(author.getName())) {
                 return;
@@ -289,7 +302,7 @@ public class JebmanGUI extends Application {
         return publishers.stream().filter(publisherItem -> publisherItem.getId() == book.getPublisher().getId()).findAny().get();
     }
 
-    private static void addBookPublisherIfNotExists(Publisher publisher, Collection<PublisherView> publishers) {
+    private static void addPublisherViewIfNotExists(Publisher publisher, Collection<PublisherView> publishers) {
         for (PublisherView pv : publishers) {
             if (pv.getName().equals(publisher.getName()))
                 return;
