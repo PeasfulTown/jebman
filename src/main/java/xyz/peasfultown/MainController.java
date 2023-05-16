@@ -259,6 +259,15 @@ public class MainController {
         return this.publishersMap;
     }
 
+    public Publisher getLastInsertedPublisher() {
+        Iterator<Publisher> iPublishers = this.publishersMap.iterator();
+        Publisher publisher = null;
+        while (iPublishers.hasNext()) {
+            publisher = iPublishers.next();
+        }
+        return publisher;
+    }
+
     public Set<Author> getAuthors() {
         return this.authorsMap;
     }

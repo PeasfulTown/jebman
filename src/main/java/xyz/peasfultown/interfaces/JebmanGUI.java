@@ -24,9 +24,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 
+// TODO: handle book series edit
 public class JebmanGUI extends Application {
     private static MainController mc;
 
@@ -120,7 +122,7 @@ public class JebmanGUI extends Application {
                 : null);
         authorCol.setCellValueFactory(f -> f.getValue().authorProperty().getValue().nameProperty());
 
-        table.getColumns().addAll(idCol, titleCol, publisherCol, authorCol);
+        table.getColumns().addAll(new ArrayList<>(Arrays.asList(idCol, titleCol, publisherCol, authorCol)));
         table.setItems(data);
 
         return table;
@@ -143,6 +145,7 @@ public class JebmanGUI extends Application {
             if (ebookFile != null) {
                 try {
                     mc.insertBook(Path.of(ebookFile.getPath()));
+                    addBookPublisherIfNotExists(mc.getLastInsertedPublisher(), this.publishers);
                     addBookAuthorIfNotExists(mc.getLastInsertedAuthor(), this.authors);
                     this.data.add(createBookAuthorView(mc.getLastInsertedBook(), this.series, this.publishers, mc.getBookAuthorLinks(), authors));
                     Alert alert = new Alert(Alert.AlertType.INFORMATION, ebookFile.getName() + " added to library!", ButtonType.OK);
@@ -267,11 +270,35 @@ public class JebmanGUI extends Application {
         return series.stream().filter(seriesItem -> seriesItem.getId() == book.getSeries().getId()).findAny().get();
     }
 
+    private static void addBookSeriesIfNotExists(Series series, Collection<SeriesView> seriesCollection) {
+        for (SeriesView sv : seriesCollection) {
+            if (sv.getName().equals(series.getName()))
+                return;
+        }
+        seriesCollection.add(createSeriesView(series));
+    }
+
+    private static SeriesView createSeriesView(Series series) {
+        return new SeriesView(series.getId(), series.getName());
+    }
+
     private static PublisherView getBookPublisher(Book book, Collection<PublisherView> publishers) {
         if (book.getPublisher() == null)
             return null;
 
         return publishers.stream().filter(publisherItem -> publisherItem.getId() == book.getPublisher().getId()).findAny().get();
+    }
+
+    private static void addBookPublisherIfNotExists(Publisher publisher, Collection<PublisherView> publishers) {
+        for (PublisherView pv : publishers) {
+            if (pv.getName().equals(publisher.getName()))
+                return;
+        }
+        publishers.add(createPublisherView(publisher));
+    }
+
+    private static PublisherView createPublisherView(Publisher publisher) {
+        return new PublisherView(publisher.getId(), publisher.getName());
     }
 
     private ObservableSet<AuthorView> collectAuthorViewItems() {
