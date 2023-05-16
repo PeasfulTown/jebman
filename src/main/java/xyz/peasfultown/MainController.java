@@ -8,6 +8,7 @@ package xyz.peasfultown;
 
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.GenericDAO;
+import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
 import xyz.peasfultown.helpers.*;
@@ -109,12 +110,7 @@ public class MainController {
 
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
-        try {
-            book = createRecordsFromMetadata(metadata);
-        } catch (DAOException e) {
-            throw new DAOException(e.getMessage(), e);
-        }
-
+        book = createRecordsFromMetadata(metadata);
         addBookToDirectory(file, metadata
                         .getOrDefault("author", metadata
                                 .getOrDefault("creator", "Unknown")),
@@ -195,7 +191,7 @@ public class MainController {
         book.setTitle(meta.getOrDefault("title", meta.get("filename")));
 
         if (booksMap.getByName(book.getTitle()) != null) {
-            throw new DAOException("Book already exists in record");
+            throw new RecordAlreadyExistsException("Book already exists in records.");
         }
 
         if (meta.get("filetype").equalsIgnoreCase("epub")) {
