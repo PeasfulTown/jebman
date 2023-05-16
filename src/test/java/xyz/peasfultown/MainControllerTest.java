@@ -6,24 +6,18 @@
 package xyz.peasfultown;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.peasfultown.dao.DAOException;
-import xyz.peasfultown.domain.Author;
-import xyz.peasfultown.domain.Book;
-import xyz.peasfultown.domain.Publisher;
-import xyz.peasfultown.helpers.*;
+import xyz.peasfultown.dao.impl.*;
+import xyz.peasfultown.domain.*;
+import static xyz.peasfultown.TestHelpers.*;
 
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,6 +30,11 @@ public class MainControllerTest {
     private static final Path dbPath = mainPath.resolve("metadata.db");
     static MainController mc = null;
 
+    @BeforeAll
+    static void setup() {
+        ApplicationConfig.setMainPath(mainPath);
+    }
+
     @AfterEach
     void cleanupEach() {
         cleanupPath(mainPath);
@@ -47,8 +46,8 @@ public class MainControllerTest {
         try {
             mc = new MainController();
 
-            assertTrue(Files.exists(mainPath));
-        } catch (SQLException e) {
+            assertTrue(Files.exists(dbPath));
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         } finally {
@@ -77,32 +76,30 @@ public class MainControllerTest {
 
     @Test
     void insertPDFInsertsCorrectRecords() {
+        // TODO: check tags
         Path file = Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile());
         logger.info("Test insert file \"{}\"", file);
 
+        MainController mc = null;
         try {
-            MainController mc = new MainController();
+            mc = new MainController();
             mc.insertBook(file);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
         }
 
-        try (Connection con = ConnectionFactory.getConnection()) {
-            String bookRecord = BookDb.queryByTitle(con, "dummy");
-            String authorRecord = AuthorDb.queryByName(con, "Evangelos Vlachogiannis");
-            String bookAuthorLinkRecord = BookAuthorLinkDb.queryForBook(con, Integer.parseInt(bookRecord.split(",")[0]));
+        try {
+            Book bookRecord = new JDBCBookDAO(null, null).read("dummy");
+            Author authorRecord = new JDBCAuthorDAO().read("Evangelos Vlachogiannis");
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Author record: {}", authorRecord);
-            logger.info("Link record: {}", bookAuthorLinkRecord);
 
             assertNotNull(bookRecord);
             assertNotNull(authorRecord);
-            assertNotNull(bookAuthorLinkRecord);
-            assertEquals(Integer.parseInt(authorRecord.split(",")[0]), Integer.parseInt(bookAuthorLinkRecord.split(",")[2]));
-        } catch (SQLException e) {
-            logger.error("Failed to query book record.", e);
+        } catch (DAOException e) {
+            logger.error("Failed to query records.", e);
             fail();
         }
     }
@@ -143,10 +140,13 @@ public class MainControllerTest {
         }
 
         try {
-            // Check bookauthor link
-            Book bookRecord = mc.getBookByTitle("Frankenstein");
-            Publisher publisherRecord = mc.getPublisherByName("Oxford University Press");
-            Author authorRecord = mc.getAuthorByName("Mary Wollstonecraft Shelley");
+            // TODO: check tags
+            SearchableRecordSet<Publisher> publishers = (SearchableRecordSet<Publisher>) new JDBCPublisherDAO().readAll();
+            SearchableRecordSet<Series> series = (SearchableRecordSet<Series>) new JDBCSeriesDAO().readAll();
+            Book bookRecord = new JDBCBookDAO(series, publishers).read("Frankenstein");
+            Publisher publisherRecord = new JDBCPublisherDAO().read("Oxford University Press");
+            Author authorRecord = new JDBCAuthorDAO().read("Mary Wollstonecraft Shelley");
+            BookAuthor bookAuthor = new JDBCBookAuthorDAO().read(1);
 
             logger.info("Book record: {}", bookRecord);
             logger.info("Publisher record: {}", publisherRecord);
@@ -155,6 +155,7 @@ public class MainControllerTest {
             assertNotNull(bookRecord);
             assertNotNull(publisherRecord);
             assertNotNull(authorRecord);
+            assertEquals("1,1,1", bookAuthor.toString());
         } catch (Exception e) {
             logger.error("Failed to validate \"{}\" records.", file.getFileName(), e);
             fail();
@@ -168,70 +169,92 @@ public class MainControllerTest {
             MainController mc = new MainController();
             insertTestBooks(mc);
 
-            Map<Integer, Book> books = mc.getBooks();
-            Map<Integer, Author> authors = mc.getAuthors();
-            Map<Integer, Publisher> publishers = mc.getPublishers();
+            Set<Book> books = mc.getBooks();
+            Set<Author> authors = mc.getAuthors();
+            Set<Publisher> publishers = mc.getPublishers();
 
             assertEquals(4, books.size());
             assertTrue(authors.size() > 0);
             assertTrue(publishers.size() > 0);
+            for (Book b : books) {
+                logger.info(b.toString());
+            }
         } catch (Exception e) {
             fail(e);
         }
     }
 
-    void bookListIsCorrect() {
-        // TODO: FINISH
-        logger.info("Check if book list is correct");
-
-    }
-
-    void insertTestBooks(MainController mc) throws DAOException, MetadataReaderException, IOException {
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("dummy.pdf").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("frankenstein.epub").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("gatsby.epub").getFile()));
-        mc.insertBook(Path.of(getClass().getClassLoader().getResource("machine-stops.pdf").getFile()));
-    }
-
-    void cleanupPath(Path filePath) {
-        logger.info("Cleaning up path");
+    @Test
+    void deleteBookRemovesBookFromFileSystem() {
+        logger.info("Check book removed from filepath on delete");
         try {
-            TreeDeleter td = new TreeDeleter();
-            Files.walkFileTree(filePath, td);
-        } catch (IOException e) {
-            logger.error("Cleaning up test file failed.", e);
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+
+            SearchableRecordSet<Book> books = (SearchableRecordSet<Book>) mc.getBooks();
+
+            Book frankenstein = books.getByName("Frankenstein");
+            Path filePath = ApplicationConfig.MAIN_PATH.resolve(frankenstein.getPath());
+            logger.info("Book Path: {}", filePath);
+            assertTrue(Files.exists(filePath));
+            mc.removeBook(frankenstein.getId());
+            assertFalse(Files.exists(filePath));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             fail();
         }
-
-        assertFalse(Files.exists(filePath));
-    }
-}
-
-class TreeDeleter implements FileVisitor<Path> {
-    @Override
-    public FileVisitResult preVisitDirectory(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-        return FileVisitResult.CONTINUE;
     }
 
-    @Override
-    public FileVisitResult visitFile(Path path, BasicFileAttributes basicFileAttributes) throws IOException {
-        System.out.format("Deleting \"%s\"%n", path);
-        Files.delete(path);
-        return FileVisitResult.CONTINUE;
+    @Test
+    void deleteBookRemovesRecordFromDatabase() {
+        logger.info("Check book record removed from database upon delete");
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+
+            SearchableRecordSet<Book> books = (SearchableRecordSet<Book>) mc.getBooks();
+            int initialSize = books.size();
+            Book frankenstein = books.getByName("Frankenstein");
+            assertNotNull(frankenstein);
+
+            SearchableRecordSet<Publisher> publishers = (SearchableRecordSet<Publisher>) new JDBCPublisherDAO().readAll();
+            SearchableRecordSet<Series> series = (SearchableRecordSet<Series>) new JDBCSeriesDAO().readAll();
+
+            JDBCBookDAO bookDAO = new JDBCBookDAO(series, publishers);
+
+            assertNotNull(bookDAO.read(frankenstein.getId()));
+            mc.removeBook(frankenstein);
+            books = (SearchableRecordSet<Book>) mc.getBooks();
+            int finalSize = books.size();
+            assertNull(bookDAO.read(frankenstein.getId()));
+            assertTrue(initialSize > finalSize);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
     }
 
-    @Override
-    public FileVisitResult visitFileFailed(Path path, IOException e) throws IOException {
-        System.err.format("File visit failed: %s%n", e);
-        return FileVisitResult.CONTINUE;
+    @Test
+    void addFormatAddsFileToBookDirectory() {
+        logger.info("Check add book format adds file to the book directory");
+        // TODO: finish
+        fail();
     }
 
-    @Override
-    public FileVisitResult postVisitDirectory(Path path, IOException e) throws IOException {
-        System.out.format("Deleting \"%s\"%n", path);
-        Files.delete(path);
-        return FileVisitResult.CONTINUE;
+    @Test
+    void removeFormatRemovesFileFromDirectory() {
+        logger.info("Check remove book format will delete it from the directory");
+        // TODO: finish
+        fail();
     }
+
+    @Test
+    void removeLastBookFormatAvailableDeletesDirectory() {
+        logger.info("Check remove book format will delete it from the directory");
+        // TODO: finish
+        fail();
+    }
+
 }
 
 /**

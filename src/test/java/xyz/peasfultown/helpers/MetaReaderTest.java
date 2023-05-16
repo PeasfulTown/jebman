@@ -3,12 +3,11 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for MetaReader.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xyz.peasfultown.helpers.MetadataReaderException;
 
 import javax.xml.stream.XMLStreamConstants;
 import java.nio.file.Path;
@@ -36,6 +35,9 @@ public class MetaReaderTest {
             fail(e);
         }
 
+        meta.forEach((k, v) -> {
+            logger.info("{}: {}", k, v);
+        });
         assertEquals("Francis Scott Fitzgerald", meta.get("author"));
         assertEquals("The Great Gatsby", meta.get("title"));
         assertEquals("2010-03-02T23:12:20.748000+00:00", meta.get("date"));
@@ -92,6 +94,31 @@ public class MetaReaderTest {
                 "radical sciences developing in the years following the Napoleonic Wars, and shows the relationship of " +
                 "Frankenstein's experiment to the contemporary debate between champions of materialistic science and " +
                 "proponents of received religion.", meta.get("description"));
+    }
+
+    @Test
+    void getEpubMetaUsingSAX3() {
+        Path file = getFileFromResources("gatsby.epub");
+        logger.info("=== Checking \"{}\" metadata", file);
+        HashMap meta = null;
+        try {
+            meta = MetaReader.getMetadata(file);
+        } catch (Exception e) {
+            logger.error("Fetching metadata failed.", e);
+            fail(e);
+        }
+
+        meta.forEach((k, v) -> {
+            logger.info("{}: {}", k, v);
+        });
+        assertEquals("Francis Scott Fitzgerald", meta.get("creator"));
+        assertEquals("The Great Gatsby", meta.get("title"));
+        assertEquals("2010-03-02T23:12:20.748000+00:00", meta.get("date"));
+        assertEquals("40b74d9e-9c86-4593-968b-8b4101013ce2", meta.get("uuid"));
+        assertEquals("Scribner", meta.get("publisher"));
+        assertEquals("SUMMARY:\nMany consider The Great Gatsby the closest thing to the Great American Novel ever " +
+                "written. First published in 1925, it is the timeless story of Jay Gatsby and his love for Daisy " +
+                "Buchanan. Gatsby lives in the New York suburb of West Egg, where those with \"", meta.get("description"));
     }
 
     @Test

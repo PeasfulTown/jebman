@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown (peasfultown@gmail.com)
  * Description: SAXHandler implementation for reading Epub content.opf files for its metadata.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

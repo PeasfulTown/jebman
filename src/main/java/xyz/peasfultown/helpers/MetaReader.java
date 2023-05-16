@@ -4,12 +4,11 @@
  * Description: Metadata reader for epub, pdf formats, returns metadata such as document title,
  * isbn/uuid (or both if they exist), publish date, etc.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.xml.sax.SAXException;
-import xyz.peasfultown.helpers.MetadataReaderException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -45,12 +44,6 @@ public class MetaReader {
     public static final String PATTERN_ISO_DATETIME_OFFSET = "[0-9]{4}-(0[1-9]|1[012])-(([0-2][0-9])|(3[01]))T(([01][0-9])|(2[0-3])):[0-5][0-9]:[0-5][0-9](\\.[0-9]+)??(\\+[0-5][0-9]:[0-5][0-9])";
     private static final String EPUB_META_FILE_NAME_PATTERN = ".*?(content.opf)$";
 
-    /**
-     * Prevent object instantiation.
-     */
-    protected MetaReader() {
-    }
-
     public static HashMap<String, String> getMetadata(Path file) throws MetadataReaderException {
         HashMap<String, String> meta = new HashMap<>();
         setBasicFileProperties(meta, file);
@@ -66,7 +59,7 @@ public class MetaReader {
         }
     }
 
-    public static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
+    private static void setPDFMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         try (PDDocument pdf = PDDocument.load(file.toFile())) {
             PDDocumentInformation pdfInfo = pdf.getDocumentInformation();
             if (pdfInfo.getTitle() != null)
@@ -76,14 +69,11 @@ public class MetaReader {
             if (pdfInfo.getCreationDate() != null)
                 meta.put("date", pdfInfo.getCreationDate().toInstant().truncatedTo(ChronoUnit.SECONDS).toString());
         } catch (Exception e) {
-            throw new MetadataReaderException("Problem while setting getting PDF metadata.", e);
+            throw new MetadataReaderException("Problem while getting PDF metadata.", e);
         }
     }
 
-    public static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
-        if (!Files.exists(file))
-            throw new MetadataReaderException("File not found.");
-
+    private static void setEpubMetadata(Path file, HashMap<String, String> meta) throws MetadataReaderException {
         try {
             processXML(file.toFile(), meta);
         } catch (Exception e) {
@@ -140,7 +130,7 @@ public class MetaReader {
                                 boolean isUUID = Pattern.matches(MetaReader.PATTERN_UUID, parserText);
                                 if (isUUID) {
                                     meta.putIfAbsent("uuid", parserText);
-                                } else {
+                                } else if (Pattern.matches(MetaReader.PATTERN_ISBN, parserText)) {
                                     meta.putIfAbsent("isbn", parserText);
                                 }
                             } else {

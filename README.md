@@ -44,4 +44,4 @@ Supported ebook formats: .epub, .mobi, .pdf
 
 # Credits
 
-The rights to the ebook files used in this project belong to their respective owners and are only used for testing purposes. If you found that the use of these files infringe on your copyright please contact peasfultown@gmail.com.
+I do not own any rights to the ebook files found in this project. The rights to the ebook files used in this project belong to their respective owners and are only used for testing purposes. If you found that the use of these files infringe on your copyright please contact peasfultown@gmail.com.

@@ -1,9 +1,10 @@
 package xyz.peasfultown.dao;
 
 import java.util.List;
+import java.util.Set;
 
 public interface GenericDAO<P> {
-    List<P> readAll() throws DAOException;
+    Set<P> readAll() throws DAOException;
     P read(int id) throws DAOException;
     P read(String str) throws DAOException;
 

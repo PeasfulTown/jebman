@@ -8,11 +8,9 @@ package xyz.peasfultown.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.StringJoiner;
 
-public class Series {
+public class Series implements Record {
     private int id;
     private String name;
 

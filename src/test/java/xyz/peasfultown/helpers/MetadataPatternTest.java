@@ -3,7 +3,7 @@
  * Original Author(s): PeasfulTown <peasfultown@gmail.com>
  * Description: Tests for MetaReader regex patterns.
  */
-package xyz.peasfultown;
+package xyz.peasfultown.helpers;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

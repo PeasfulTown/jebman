@@ -14,23 +14,27 @@ import xyz.peasfultown.helpers.*;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * TODO: upon instantialization, check program's main path for the SQLite database file (metadata.db) and load it.
  */
 public class MainController {
-    private Path mainPath;
-    private Map<Integer, Book> booksMap;
-    private Map<Integer, Series> seriesMap;
-    private Map<Integer, Publisher> publishersMap;
-    private Map<Integer, Author> authorsMap;
+    private final Path mainPath;
+    private SearchableRecordSet<Book> booksMap;
+    private SearchableRecordSet<Series> seriesMap;
+    private SearchableRecordSet<Publisher> publishersMap;
+    private SearchableRecordSet<Author> authorsMap;
+    private SearchableRecordSet<BookAuthor> bookAuthorMap;
     private GenericDAO<Book> bookDAO;
     private GenericDAO<Series> seriesDAO;
     private GenericDAO<Publisher> publisherDAO;
@@ -44,18 +48,6 @@ public class MainController {
      */
     public MainController() throws SQLException {
         this.mainPath = ApplicationConfig.MAIN_PATH;
-
-        this.booksMap = new HashMap<>();
-        this.seriesMap = new HashMap<>();
-        this.publishersMap = new HashMap<>();
-        this.authorsMap = new HashMap<>();
-
-        this.publisherDAO = new JDBCPublisherDAO();
-        this.seriesDAO = new JDBCSeriesDAO();
-        this.bookAuthorDAO = new JDBCBookAuthorDAO();
-        this.authorDAO = new JDBCAuthorDAO();
-        this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
-
         ready();
     }
 
@@ -75,6 +67,32 @@ public class MainController {
         } catch (SQLException e) {
             throw new SQLException(e.getMessage(), e);
         }
+
+        populateCollections();
+    }
+
+    public void populateCollections() {
+        try {
+            this.publisherDAO = new JDBCPublisherDAO();
+            this.seriesDAO = new JDBCSeriesDAO();
+            this.authorDAO = new JDBCAuthorDAO();
+            this.bookAuthorDAO = new JDBCBookAuthorDAO();
+
+            this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
+            this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
+            this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
+            this.bookAuthorMap = (SearchableRecordSet<BookAuthor>) this.getAllBookAuthorLinks();
+
+            this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
+            this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
+        } catch (DAOException e) {
+            System.err.println("Unable to populate collections.");
+        }
+    }
+
+    public void insertBook(String filePath) throws DAOException, IOException, MetadataReaderException {
+        Path file = Path.of(filePath);
+        insertBook(file);
     }
 
     /**
@@ -85,18 +103,13 @@ public class MainController {
      * @throws XMLStreamException
      */
     public void insertBook(Path file) throws DAOException, IOException, MetadataReaderException {
-        // TODO: validate file format
-        // TODO: insert author record if not already present
-        String[] parts = file.getFileName().toString().split("\\.");
-
-        if (parts.length < 2) {
-            throw new IOException(String.format("Unable to determine %s filetype.", file.getFileName()));
-        }
+        if (!Files.exists(file))
+            throw new FileNotFoundException("File does not exist.");
 
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         try {
-            book = createBookFromMetadata(metadata);
+            book = createRecordsFromMetadata(metadata);
         } catch (DAOException e) {
             throw new DAOException(e.getMessage(), e);
         }
@@ -107,48 +120,65 @@ public class MainController {
                 book.getTitle(),
                 book.getId(),
                 metadata.get("filetype"));
-        this.booksMap.put(book.getId(), book);
+        this.booksMap.add(book);
     }
 
-    public Book getBookById(int id) throws DAOException {
-        return bookDAO.read(id);
+    public void removeBook(int id) throws DAOException, IOException {
+        Book book = bookDAO.read(id);
+        removeBook(book);
     }
 
-    public Book getBookByTitle(String str) throws DAOException {
-        return bookDAO.read(str);
+    public void removeBook(Book book) throws DAOException, IOException {
+        Path pathToRemove = Path.of(ApplicationConfig.MAIN_PATH.toString(), book.getPath());
+        TreeDeleter td = new TreeDeleter();
+        Files.walkFileTree(pathToRemove, td);
+
+        bookDAO.delete(book.getId());
+        booksMap.remove(book);
     }
 
-    public Publisher getPublisherById(int id) throws DAOException {
-        return publisherDAO.read(id);
+    private Set<Publisher> getAllPublishers() throws DAOException {
+        return publisherDAO.readAll();
     }
 
-    public Publisher getPublisherByName(String str) throws DAOException {
-        return publisherDAO.read(str);
+    private Set<Series> getAllSeries() throws DAOException {
+        return seriesDAO.readAll();
     }
 
-    public Series getSeriesById(int id) throws DAOException {
-        return seriesDAO.read(id);
+    private Set<Author> getAllAuthors() throws DAOException {
+        return authorDAO.readAll();
     }
 
-    public Series getSeriesByName(String str) throws DAOException {
-        return seriesDAO.read(str);
+    private Set<BookAuthor> getAllBookAuthorLinks() throws DAOException {
+        return bookAuthorDAO.readAll();
     }
 
-    public Author getAuthorById(int id) throws DAOException {
-        return authorDAO.read(id);
+    private Set<Book> getAllBooks() throws DAOException {
+        return bookDAO.readAll();
     }
 
-    public Author getAuthorByName(String str) throws DAOException {
-        return authorDAO.read(str);
+    public Author getBookAuthorByBookId(int id) {
+        for(BookAuthor ba : bookAuthorMap) {
+            if (ba.getBookId() == id)
+                return this.authorsMap.getById(ba.getAuthorId());
+        }
+        System.out.println("Cannot find Author");
+        return null;
     }
 
     public Path getMainPath() {
         return this.mainPath;
     }
 
+    private String getRelativePathToBook(String authorName, String bookTitle, int id) {
+        return new StringBuilder(authorName)
+                .append(System.getProperty("file.separator"))
+                .append(bookTitle)
+                .append(' ').append('(').append(id).append(')').toString();
+    }
+
     private void addBookToDirectory(Path file, String authorName, String bookTitle, int id, String fileType) throws IOException {
-        String titleDir = new StringBuilder(bookTitle).append(' ').append('(').append(id).append(')').toString();
-        Path destDir = Path.of(mainPath.toString(), authorName, titleDir);
+        Path destDir = Path.of(mainPath.toString(), getRelativePathToBook(authorName, bookTitle, id));
 
         if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
             Files.createDirectories(destDir);
@@ -159,102 +189,88 @@ public class MainController {
         Files.copy(file, target);
     }
 
-    private Book createBookFromMetadata(HashMap<String, String> meta) throws DAOException {
+    private Book createRecordsFromMetadata(HashMap<String, String> meta) throws DAOException {
         Book book = new Book();
-        if (meta.get("filetype").equalsIgnoreCase("epub")) {
-            setEpub(book, meta);
-        } else if (meta.get("filetype").equalsIgnoreCase("pdf")) {
-            setPDF(book, meta);
-        }
+        book.setTitle(meta.getOrDefault("title", meta.get("filename")));
 
-        if (getBookFromStore(book.getTitle()) != null) {
+        if (booksMap.getByName(book.getTitle()) != null) {
             throw new DAOException("Book already exists in record");
         }
-        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
-        book.setPath(authorName + System.getProperty("file.separator") + book.getTitle());
+
+        if (meta.get("filetype").equalsIgnoreCase("epub")) {
+            setEpub(book, meta);
+        }
+
+        book.setPublishDate(MetaReader
+                .parseDate(meta.getOrDefault("date", Instant.now().truncatedTo(ChronoUnit.SECONDS).toString())));
 
         bookDAO.create(book);
-        Author author = getAuthorFromMap(authorName);
-        if (author == null) {
-            author = new Author(authorName);
-            authorDAO.create(author);
-            this.authorsMap.put(author.getId(), author);
-        }
-        BookAuthor ba = new BookAuthor(book.getId(), author.getId());
-        try {
-            bookAuthorDAO.create(ba);
-        } catch (DAOException e) {
-            throw new DAOException(e.getMessage(), e);
-        }
+        String authorName = meta.getOrDefault("author", meta.getOrDefault("creator", "Unknown"));
+        Author author = createAuthorFromName(authorName);
+        book.setPath(getRelativePathToBook(author.getName(), book.getTitle(), book.getId()));
+        bookDAO.update(book);
+        createBookAuthorLink(book.getId(), author.getId());
+
+        addBookAuthorLink(book.getId(), author.getId());
         return book;
     }
 
+    private void addBookAuthorLink(int bookId, int authorId) throws DAOException {
+        BookAuthor ba = new BookAuthor(bookId, authorId);
+        this.bookAuthorDAO.create(ba);
+        this.bookAuthorMap.add(ba);
+    }
+
     private void setEpub(Book book, HashMap<String, String> meta) throws DAOException {
-        String filename = meta.get("filename");
         book.setIsbn(meta.getOrDefault("isbn", ""));
         book.setUuid(meta.getOrDefault("uuid", ""));
-        book.setTitle(meta.getOrDefault("title", filename));
-
         String publisherMeta = meta.get("publisher");
-        if (publisherMeta != null) {
-            Publisher publisher = getPublisherFromMap(meta.get("publisher"));
+        Publisher publisher = createPublisherFromName(publisherMeta);
+        book.setPublisher(publisher);
+    }
+
+    private void createBookAuthorLink(int bookId, int authorId) throws DAOException {
+        BookAuthor ba = new BookAuthor(bookId, authorId);
+        bookAuthorDAO.create(ba);
+    }
+
+    private Author createAuthorFromName(String name) throws DAOException {
+        Author author = authorsMap.getByName(name);
+        if (author == null) {
+            author = new Author(name);
+            authorDAO.create(author);
+            this.authorsMap.add(author);
+        }
+        return author;
+    }
+
+    private Publisher createPublisherFromName(String publisherName) throws DAOException {
+        if (publisherName != null) {
+            Publisher publisher = publishersMap.getByName(publisherName);
             if (publisher == null) {
-                publisher = new Publisher(publisherMeta);
+                publisher = new Publisher(publisherName);
                 publisherDAO.create(publisher);
-                this.publishersMap.put(publisher.getId(), publisher);
+                this.publishersMap.add(publisher);
             }
-            book.setPublisher(publisher);
-        }
-
-        if (meta.get("date") != null)
-            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
-    }
-
-    private void setPDF(Book book, HashMap<String, String> meta) {
-        String filename = meta.get("filename");
-        book.setTitle(meta.getOrDefault("title", filename));
-        if (meta.get("date") != null)
-            book.setPublishDate(MetaReader.parseDate(meta.get("date")));
-    }
-
-    private Book getBookFromStore(String title) {
-        for (Book b : booksMap.values()) {
-            if (b.getTitle().equals(title))
-                return b;
+            return publisher;
         }
         return null;
     }
 
-    private Publisher getPublisherFromMap(String name) {
-        for (Publisher p : publishersMap.values()) {
-            if (p.getName().equalsIgnoreCase(name))
-                return p;
-        }
-        return null;
-    }
-
-    private Author getAuthorFromMap(String name) {
-        for (Author a : authorsMap.values()) {
-            if (a.getName().equalsIgnoreCase(name))
-                return a;
-        }
-        return null;
-    }
-
-    public Map<Integer, Book> getBooks() {
-        return this.booksMap;
-    }
-
-    public Map<Integer, Series> getSeries() {
+    public Set<Series> getSeries() {
         return this.seriesMap;
     }
 
-    public Map<Integer, Publisher> getPublishers() {
+    public Set<Publisher> getPublishers() {
         return this.publishersMap;
     }
 
-    public Map<Integer, Author> getAuthors() {
+    public Set<Author> getAuthors() {
         return this.authorsMap;
+    }
+
+    public Set<Book> getBooks() {
+        return this.booksMap;
     }
 }
 

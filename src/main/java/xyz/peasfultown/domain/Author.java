@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Author {
+public class Author implements Record {
     private int id;
     private String name;
 

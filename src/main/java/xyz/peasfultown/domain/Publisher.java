@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import java.util.HashMap;
 import java.util.StringJoiner;
 
-public class Publisher {
+public class Publisher implements Record {
     private int id;
     private String name;
 
