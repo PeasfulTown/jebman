@@ -23,7 +23,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,7 +125,6 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
         TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
 
-        data.addAll(collectBookAuthorViewItems());
 
         idCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().idProperty().asObject());
         titleCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().titleProperty());
@@ -154,6 +152,7 @@ public class JebmanGUI extends Application {
                 Arrays.asList(idCol, titleCol, publisherCol, authorIdCol, authorNameCol,
                         seriesIdCol, seriesNameCol, seriesNumberCol,
                         datePublishedCol, dateAddedCol, dateModifiedCol)));
+        data.addAll(collectBookAuthorViewItems());
         table.setItems(data);
 
         return table;
