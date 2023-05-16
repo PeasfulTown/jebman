@@ -1,20 +1,14 @@
 package xyz.peasfultown;
 
-import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.interfaces.JebmanGUI;
 import xyz.peasfultown.interfaces.JebmanPrompt;
 import xyz.peasfultown.interfaces.Prompter;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 public class Application {
-    private static boolean gui;
+    private static boolean gui = false;
     private static MainController mc;
-
-    static {
-        gui = false;
-    }
 
     public static void main(String[] args) {
 
@@ -43,6 +37,8 @@ public class Application {
         }
 
         try {
+            if (ApplicationConfig.MAIN_PATH == null)
+                setProgramMainPath(ApplicationDefaults.MAIN_PATH);
             mc = new MainController();
         } catch (SQLException e) {
             System.err.format("Unable to run database creation script: %s%n", e.getMessage());
@@ -50,15 +46,15 @@ public class Application {
         }
 
         if (gui) {
-            JebmanGUI.start(mc);
+            JebmanGUI.run(mc);
         } else {
             JebmanPrompt prompt = new JebmanPrompt(new Prompter(System.in, System.out), mc);
-            prompt.start();
+            prompt.run();
         }
     }
 
     private static void usage() {
-        System.err.println("jebman [-g]");
+        System.err.println("jebman [-gp]");
         System.exit(-1);
     }
 

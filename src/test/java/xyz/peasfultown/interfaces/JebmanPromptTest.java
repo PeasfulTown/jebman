@@ -49,7 +49,7 @@ class JebmanPromptTest {
             System.setIn(in);
             Prompter prompter = new Prompter(in, System.out);
             JebmanPrompt jebman = new JebmanPrompt(prompter, mc);
-            jebman.start();
+            jebman.run();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
@@ -75,7 +75,7 @@ class JebmanPromptTest {
             System.setIn(in);
             Prompter prompter = new Prompter(in, System.out);
             JebmanPrompt jebman = new JebmanPrompt(prompter, mc);
-            jebman.start();
+            jebman.run();
             assertEquals(1, mc.getBooks().size());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -102,7 +102,7 @@ class JebmanPromptTest {
             Prompter prompter = new Prompter(in, System.out);
             System.setIn(in);
             JebmanPrompt jebman = new JebmanPrompt(prompter, mc);
-            jebman.start();
+            jebman.run();
             assertEquals(3, mc.getBooks().size());
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
