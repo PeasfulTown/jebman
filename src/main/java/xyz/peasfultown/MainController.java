@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -209,16 +210,8 @@ public class MainController {
         Author author = createAuthorFromName(authorName);
         book.setPath(getRelativePathToBook(author.getName(), book.getTitle(), book.getId()));
         bookDAO.update(book);
-        createBookAuthorLink(book.getId(), author.getId());
-
         addBookAuthorLink(book.getId(), author.getId());
         return book;
-    }
-
-    private void addBookAuthorLink(int bookId, int authorId) throws DAOException {
-        BookAuthor ba = new BookAuthor(bookId, authorId);
-        this.bookAuthorDAO.create(ba);
-        this.bookAuthorMap.add(ba);
     }
 
     private void setEpub(Book book, HashMap<String, String> meta) throws DAOException {
@@ -229,9 +222,10 @@ public class MainController {
         book.setPublisher(publisher);
     }
 
-    private void createBookAuthorLink(int bookId, int authorId) throws DAOException {
+    private void addBookAuthorLink(int bookId, int authorId) throws DAOException {
         BookAuthor ba = new BookAuthor(bookId, authorId);
-        bookAuthorDAO.create(ba);
+        this.bookAuthorDAO.create(ba);
+        this.bookAuthorMap.add(ba);
     }
 
     private Author createAuthorFromName(String name) throws DAOException {
@@ -269,8 +263,26 @@ public class MainController {
         return this.authorsMap;
     }
 
+    public Author getLastInsertedAuthor() {
+        Iterator<Author> iAuthors = this.authorsMap.iterator();
+        Author author = null;
+        while (iAuthors.hasNext()) {
+            author = iAuthors.next();
+        }
+        return author;
+    }
+
     public Set<Book> getBooks() {
         return this.booksMap;
+    }
+
+    public Book getLastInsertedBook() {
+        Iterator<Book> iBooks = this.booksMap.iterator();
+        Book book = null;
+        while (iBooks.hasNext()) {
+            book = iBooks.next();
+        }
+        return book;
     }
 
     public Set<BookAuthor> getBookAuthorLinks() {
