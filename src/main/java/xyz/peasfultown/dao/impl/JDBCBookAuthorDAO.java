@@ -72,4 +72,9 @@ public class JDBCBookAuthorDAO extends JDBCAbstractDAO<BookAuthor> {
         }
         return link;
     }
+
+    @Override
+    public BookAuthor read(String str) throws DAOException {
+        return null;
+    }
 }
