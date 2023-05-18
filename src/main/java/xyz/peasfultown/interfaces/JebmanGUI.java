@@ -1,6 +1,11 @@
 package xyz.peasfultown.interfaces;
 
 import javafx.application.Application;
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.IntegerBinding;
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
@@ -37,17 +42,14 @@ import java.util.Set;
 public class JebmanGUI extends Application {
     private static MainController mc;
 
-    private final ObservableList<BookAuthorView> data = FXCollections.observableList(new ArrayList<>());
+    private final ObservableList<BookAuthorView> data = FXCollections.observableList(new ArrayList<>(), (BookAuthorView e) -> {
+        return new Observable[]{ e.getBook().publisherProperty(), e.getAuthor().idProperty(), e.getBook().seriesProperty() };
+    });
     private final ObservableList<AuthorView> authors = FXCollections.observableList(new ArrayList<>());
     private final ObservableList<PublisherView> publishers = FXCollections.observableList(new ArrayList<>());
     private final ObservableList<SeriesView> series = FXCollections.observableList(new ArrayList<>());
 
     private final Desktop desktop = Desktop.getDesktop();
-    private final ObservableSet<BookView> bookView = null;
-    private final ObservableSet<AuthorView> authorView = null;
-    private final ObservableSet<PublisherView> publisherView = null;
-    private final ObservableSet<SeriesView> seriesView = null;
-    private final ObservableSet<BookAuthorView> bookAuthorView = null;
 
     public static void run(MainController mc) {
         JebmanGUI.mc = mc;
@@ -173,6 +175,8 @@ public class JebmanGUI extends Application {
         publisherIdCol.setCellValueFactory(f -> f.getValue().getBook().getPublisher() != null
                 ? f.getValue().getBook().getPublisher().idProperty().asObject()
                 : null);
+        publisherIdCol.setEditable(false);
+
         publisherNameCol.setCellValueFactory(f -> f.getValue()
                 .bookProperty().getValue().getPublisher() != null
                 ? f.getValue().bookProperty().getValue().publisherProperty().getValue().nameProperty()
@@ -196,6 +200,7 @@ public class JebmanGUI extends Application {
                                 d.getBook().setPublisher(publisherView);
                             }
                         });
+                        event.getTableView().getItems().set(event.getTablePosition().getRow(), event.getRowValue());
                     } catch (Exception e) {
                         showPopupErrorWithException(e);
                     }
