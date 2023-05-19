@@ -214,7 +214,6 @@ public class JebmanGUI extends Application {
 
                         mc.updateBook(book);
 
-                        Publisher publisher = record;
                         BookView bv = this.data.stream().filter(d -> d.getBook().getId() == event.getRowValue().getBook().getId()).findFirst().get().getBook();
                         bv.setPublisher(new PublisherView(record.getId(), record.getName()));
                         event.getTableView().getItems().set(event.getTablePosition().getRow(), event.getRowValue());
