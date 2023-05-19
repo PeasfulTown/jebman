@@ -180,7 +180,8 @@ public class JebmanGUI extends Application {
                             showPopupErrorWithExceptionStack(e);
                         }
                     }
-                    BookAuthorView rec = this.data.stream().filter(d -> d.getBook().getId() == event.getRowValue().getBook().getId()).findFirst().get();
+                    BookAuthorView rec = this.data.stream()
+                            .filter(d -> d.getBook().getId() == event.getRowValue().getBook().getId()).findFirst().get();
                     rec.getAuthor().setId(author.getId());
                     rec.getAuthor().setName(author.getName());
                 });
@@ -197,35 +198,28 @@ public class JebmanGUI extends Application {
         publisherNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
         publisherNameCol.setOnEditCommit(
                 (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
-                    Publisher pub = null;
                     try {
                         // Check if the Publisher record with the entered name already exists in database, if so, assign
                         // it, otherwise, create and then assign
-                        PublisherView publisherView = new PublisherView(0, "");
-                        pub = mc.readPublisherByName(event.getNewValue());
-                        if (pub == null) {
-                            pub = new Publisher(event.getNewValue());
-                            mc.insertPublisher(pub);
-                            publisherView.setId(pub.getId());
-                            publisherView.setName(pub.getName());
-                        } else {
-                            int pubId = pub.getId();
-                            PublisherView pv = this.data.stream().filter(d -> d.getBook().getPublisher().getId() == pubId)
-                                    .findFirst().get().getBook().getPublisher();
-                            publisherView.setId(pv.getId());
-                            publisherView.setName(pv.getName());
+                        Publisher record = mc.readPublisherByName(event.getNewValue());
+                        if (record == null) {
+                            record = new Publisher();
+                            record.setName(event.getNewValue());
+                            mc.insertPublisher(record);
+                            System.out.format("Publisher created: %s%n", record);
                         }
+
                         Book book = event.getRowValue().getBook().getValue();
-                        // Update book record
+                        book.setPublisher(record);
+
                         mc.updateBook(book);
-                        this.data.forEach(d -> {
-                            if (d.getBook().getId() == event.getRowValue().getBook().getId()) {
-                                d.getBook().setPublisher(publisherView);
-                            }
-                        });
+
+                        Publisher publisher = record;
+                        BookView bv = this.data.stream().filter(d -> d.getBook().getId() == event.getRowValue().getBook().getId()).findFirst().get().getBook();
+                        bv.setPublisher(new PublisherView(record.getId(), record.getName()));
                         event.getTableView().getItems().set(event.getTablePosition().getRow(), event.getRowValue());
                     } catch (Exception e) {
-                        showPopupErrorWithExceptionStack(e);
+                        showPopupErrorWithExceptionStack(e, "Error while updating publisher name.");
                     }
                 }
         );

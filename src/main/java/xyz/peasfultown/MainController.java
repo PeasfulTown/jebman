@@ -132,11 +132,8 @@ public class MainController {
 
     public void updateBook(Book bookToUpdate) throws DAOException {
         this.bookDAO.update(bookToUpdate);
-        this.bookSet.forEach(book -> {
-            if (book.getId() == bookToUpdate.getId()) {
-                bookSet.remove(book);
-            }
-        });
+        Book book = this.bookSet.stream().filter(b -> b.getId() == bookToUpdate.getId()).findFirst().get();
+        this.bookSet.remove(book);
         this.bookSet.add(bookToUpdate);
     }
 
