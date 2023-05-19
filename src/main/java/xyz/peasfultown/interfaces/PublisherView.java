@@ -4,6 +4,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import xyz.peasfultown.domain.Publisher;
 
 public class PublisherView {
     private final IntegerProperty id = new SimpleIntegerProperty();
@@ -36,5 +37,9 @@ public class PublisherView {
 
     public void setName(String name) {
         this.name.set(name);
+    }
+
+    public Publisher getValue() {
+        return new Publisher(this.getId(), this.getName());
     }
 }

@@ -1,6 +1,11 @@
 package xyz.peasfultown.interfaces;
 
 import javafx.beans.property.*;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Publisher;
+import xyz.peasfultown.domain.Series;
+
+import java.time.Instant;
 
 public class BookView {
     private final IntegerProperty id = new SimpleIntegerProperty();
@@ -160,5 +165,19 @@ public class BookView {
 
     public void setPath(String path) {
         this.path.set(path);
+    }
+
+    public Book getValue() {
+        return new Book(this.getId(), this.getIsbn(), this.getUuid(), this.getTitle(),
+                this.getSeries() != null
+                        ? this.getSeries().getValue()
+                        : null, this.getSeriesNumber(),
+                this.getPublisher() != null
+                        ? this.getPublisher().getValue()
+                        : null,
+                Instant.parse(this.getDatePublished()),
+                Instant.parse(this.getDateAdded()),
+                Instant.parse(this.getDateModified()),
+                this.getPath());
     }
 }

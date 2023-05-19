@@ -5,6 +5,8 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
+import xyz.peasfultown.domain.Series;
+
 public class SeriesView {
     private final IntegerProperty id = new SimpleIntegerProperty();
     private final StringProperty name = new SimpleStringProperty();
@@ -36,5 +38,9 @@ public class SeriesView {
 
     public void setName(String name) {
         this.name.set(name);
+    }
+
+    public Series getValue() {
+        return new Series(this.getId(), this.getName());
     }
 }

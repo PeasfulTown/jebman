@@ -98,8 +98,13 @@ public class MainController {
     }
 
     public void insertPublisher(Publisher publisher) throws DAOException {
-        publisherDAO.create(publisher);
-        publisherSet.add(publisher);
+        this.publisherDAO.create(publisher);
+        this.publisherSet.add(publisher);
+    }
+
+    public void insertAuthor(Author author) throws DAOException {
+        this.authorDAO.create(author);
+        this.authorSet.add(author);
     }
 
     /**
