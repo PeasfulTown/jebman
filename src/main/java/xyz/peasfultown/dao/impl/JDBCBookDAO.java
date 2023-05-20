@@ -28,6 +28,11 @@ public class JDBCBookDAO extends JDBCAbstractDAO<Book> {
     }
 
     @Override
+    protected String getLastInsertedRowQuery() {
+        return "SELECT * FROM books WHERE id=(SELECT MAX(id) FROM books);";
+    }
+
+    @Override
     protected String getCreateQuery() {
         return "INSERT INTO books " +
                 "(isbn, uuid, title, series_id, series_number, publisher_id, " +

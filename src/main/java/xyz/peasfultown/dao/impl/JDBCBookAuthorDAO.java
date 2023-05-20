@@ -19,6 +19,11 @@ public class JDBCBookAuthorDAO extends JDBCAbstractDAO<BookAuthor> {
     }
 
     @Override
+    protected String getLastInsertedRowQuery() {
+        return "SELECT * FROM books_authors_link WHERE id=(SELECT MAX(id) FROM books_authors_link);";
+    }
+
+    @Override
     protected String getUpdateQuery() {
         return "UPDATE books_authors_link SET book_id=?, author_id=? WHERE id=?;";
     }

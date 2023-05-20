@@ -15,6 +15,11 @@ public class JDBCPublisherDAO extends JDBCAbstractDAO<Publisher> {
     }
 
     @Override
+    protected String getLastInsertedRowQuery() {
+        return "SELECT * FROM publishers WHERE id=(SELECT MAX(id) FROM publishers);";
+    }
+
+    @Override
     protected String getCreateQuery() {
         return "INSERT INTO publishers (name) VALUES (?);";
     }

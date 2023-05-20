@@ -14,6 +14,11 @@ public class JDBCAuthorDAO extends JDBCAbstractDAO<Author> {
     }
 
     @Override
+    protected String getLastInsertedRowQuery() {
+        return "SELECT * FROM authors WHERE id=(SELECT MAX(id) FROM authors);";
+    }
+
+    @Override
     protected String getCreateQuery() {
         return "INSERT INTO authors (name) VALUES (?);";
     }

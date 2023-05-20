@@ -19,20 +19,14 @@ public abstract class JDBCAbstractDAO<P extends Record> implements GenericDAO<P>
     protected String getLastInsertIdQuery() {
         return SQL_QUERY_LAST_INSERT_ID;
     }
-
     protected abstract void assignObjectId(P object, Integer id);
-
+    protected abstract String getLastInsertedRowQuery();
     protected abstract String getCreateQuery();
-
     protected abstract String getUpdateQuery();
-
     protected abstract String getReadAllQuery();
-
     protected abstract String getReadByIdQuery();
     protected abstract String getReadByNameQuery();
-
     protected abstract String getDeleteQuery();
-
     protected abstract String getCountRowsQuery();
 
     protected abstract void setStatementObject(PreparedStatement stmt, P object) throws DAOException;
@@ -120,6 +114,21 @@ public abstract class JDBCAbstractDAO<P extends Record> implements GenericDAO<P>
                 else
                     return null;
             }
+        } catch (Exception e) {
+            throw new DAOException(e.getMessage(), e);
+        }
+    }
+
+    public P readLastInsertedRow() throws DAOException {
+        String readQuery = this.getLastInsertedRowQuery();
+
+        try (Connection con = ConnectionFactory.getConnection();
+            PreparedStatement stmt = con.prepareStatement(readQuery);
+            ResultSet rs = stmt.executeQuery()) {
+            if (rs.next())
+                return getObjectFromResultSet(rs);
+            else
+                return null;
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
         }
