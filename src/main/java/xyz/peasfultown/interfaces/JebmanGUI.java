@@ -103,130 +103,27 @@ public class JebmanGUI extends Application {
         TableView<BookAuthorView> table = new TableView<>();
         table.setEditable(true);
 
-        TableColumn<BookAuthorView, Integer> idCol = new TableColumn<>("ID");
-        TableColumn<BookAuthorView, String> titleCol = new TableColumn<>("Title");
+        TableColumn<BookAuthorView, Integer> bookIdCol = this.getBookIdColumn();
+        TableColumn<BookAuthorView, String> bookTitleCol = this.getBookTitleColumn();
 
-        TableColumn<BookAuthorView, Integer> authorIdCol = new TableColumn<>("Author ID");
-        TableColumn<BookAuthorView, String> authorNameCol = new TableColumn<>("Author");
+        TableColumn<BookAuthorView, Integer> authorIdCol = this.getAuthorIdColumn();
+        TableColumn<BookAuthorView, String> authorNameCol = this.getAuthorNameColumn();
 
-        TableColumn<BookAuthorView, Integer> seriesIdCol = new TableColumn<>("Series ID");
-        TableColumn<BookAuthorView, String> seriesNameCol = new TableColumn<>("Series");
-        TableColumn<BookAuthorView, Double> seriesNumberCol = new TableColumn<>("Series Index");
+        TableColumn<BookAuthorView, Integer> seriesIdCol = this.getSeriesIdColumn();
+        TableColumn<BookAuthorView, String> seriesNameCol = this.getSeriesNameColumn();
+        TableColumn<BookAuthorView, Double> seriesNumberCol = this.getSeriesNumberColumn();
 
-        TableColumn<BookAuthorView, Integer> publisherIdCol = new TableColumn<>("Publisher ID");
-        TableColumn<BookAuthorView, String> publisherNameCol = new TableColumn<>("Publisher");
+        TableColumn<BookAuthorView, Integer> publisherIdCol = this.getPublisherIdColumn();
+        TableColumn<BookAuthorView, String> publisherNameCol = this.getPublisherNameColumn();
 
-        TableColumn<BookAuthorView, String> datePublishedCol = new TableColumn<>("Date Published");
-        TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
-        TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
+        TableColumn<BookAuthorView, String> datePublishedCol = this.getDatePublishedColumn();
+        TableColumn<BookAuthorView, String> dateAddedCol = this.getDateAddedColumn();
+        TableColumn<BookAuthorView, String> dateModifiedCol = this.getDateModifiedColumn();
 
-        TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
-
-
-        idCol.setCellValueFactory(f -> new SimpleIntegerProperty(f.getValue().getBook().getId()).asObject());
-        titleCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getTitle()));
-        titleCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        titleCol.setEditable(true);
-        titleCol.setOnEditCommit(
-                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
-                    try {
-                        Book book = mc.getBookByTitle(event.getNewValue());
-                        if (book == null) {
-                            book = new Book(event.getNewValue());
-                            mc.updateBook(book);
-                        } else {
-                            showPopupError("Error", "A book with that title already exists in the database.");
-                        }
-                    } catch (Exception e) {
-                        showPopupErrorWithExceptionStack(e);
-                    }
-                });
-
-        authorIdCol.setCellValueFactory(f -> new SimpleIntegerProperty(f.getValue().getAuthor().getId()).asObject());
-        authorNameCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getAuthor().getName()));
-        authorNameCol.setEditable(true);
-        authorNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        authorNameCol.setOnEditCommit(
-                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
-                    try {
-                        Author author = mc.getAuthorByName(event.getNewValue());
-                        if (author == null) {
-                            author = new Author(event.getNewValue());
-                            mc.insertAuthor(author);
-                        }
-                        BookAuthorView bav = event.getRowValue();
-                        bav.setAuthor(author);
-                        event.getTableView().getItems().set(event.getTablePosition().getRow(), bav);
-                    } catch (Exception ex) {
-                        showPopupErrorWithExceptionStack(ex);
-                    }
-                });
-
-        publisherIdCol.setCellValueFactory(f -> f.getValue().getBook().getPublisher() != null
-                ? new SimpleIntegerProperty(f.getValue().getBook().getPublisher().getId()).asObject()
-                : null);
-        publisherIdCol.setEditable(false);
-
-        publisherNameCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().getPublisher() != null
-                ? new SimpleStringProperty(f.getValue().getBook().getPublisher().getName())
-                : null);
-        publisherNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        publisherNameCol.setOnEditCommit(
-                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
-                    try {
-                        // Check if the Publisher record with the entered name already exists in database, if so, assign
-                        // it, otherwise, create and then assign
-                        Publisher record = mc.getPublisherByName(event.getNewValue());
-                        if (record == null) {
-                            record = new Publisher();
-                            record.setName(event.getNewValue());
-                            mc.insertPublisher(record);
-                        }
-
-                        Book book = event.getRowValue().getBook();
-                        book.setPublisher(record);
-
-                        mc.updateBook(book);
-
-                        Book bv = this.data.stream().filter(d -> d.getBook().getId() == event.getRowValue().getBook().getId()).findFirst().get().getBook();
-                        bv.setPublisher(record);
-                        event.getTableView().getItems().set(event.getTablePosition().getRow(), event.getRowValue());
-                    } catch (Exception e) {
-                        showPopupErrorWithExceptionStack(e, "Error while updating publisher name.");
-                    }
-                }
-        );
-
-        seriesIdCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
-                ? new SimpleIntegerProperty(f.getValue().getBook().getSeries().getId()).asObject()
-                : null);
-        seriesNameCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
-                ? new SimpleStringProperty(f.getValue().getBook().getSeries().getName())
-                : null);
-        seriesNumberCol.setCellValueFactory(f -> new SimpleDoubleProperty(f.getValue().getBook().getSeriesNumber()).asObject());
-        seriesNumberCol.setCellFactory(TextFieldTableCell.forTableColumn(new CustomDoubleStringConverter()));
-        seriesNumberCol.setEditable(true);
-        seriesNumberCol.setOnEditCommit(
-                (TableColumn.CellEditEvent<BookAuthorView, Double> event) -> {
-                    try {
-                        Book updatedBook = event.getRowValue().getBook();
-                        updatedBook.setSeriesNumber(event.getNewValue());
-                        mc.updateBook(updatedBook);
-                        event.getRowValue().getBook().setSeriesNumber(event.getNewValue());
-                    } catch (DAOException e) {
-                        showPopupErrorWithExceptionStack(e);
-                    }
-                }
-        );
-
-        datePublishedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPublishDate().toString()));
-        dateAddedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getAddedDate().toString()));
-        dateModifiedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getModifiedDate().toString()));
-
-        pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
+        TableColumn<BookAuthorView, String> pathCol = this.getPathColumn();
 
         table.getColumns().addAll(new ArrayList<>(
-                Arrays.asList(idCol, titleCol, authorIdCol, authorNameCol,
+                Arrays.asList(bookIdCol, bookTitleCol, authorIdCol, authorNameCol,
                         publisherIdCol, publisherNameCol,
                         seriesIdCol, seriesNameCol, seriesNumberCol,
                         datePublishedCol, dateAddedCol, dateModifiedCol, pathCol)));
@@ -295,4 +192,161 @@ public class JebmanGUI extends Application {
         return new BookAuthorView(book, author);
     }
 
+    private TableColumn<BookAuthorView, Integer> getBookIdColumn() {
+        TableColumn<BookAuthorView, Integer> bookIdCol = new TableColumn<>("ID");
+        bookIdCol.setCellValueFactory(f -> new SimpleIntegerProperty(f.getValue().getBook().getId()).asObject());
+        return bookIdCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getBookTitleColumn() {
+        TableColumn<BookAuthorView, String> bookTitleCol = new TableColumn<>("Title");
+        bookTitleCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getTitle()));
+        bookTitleCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        bookTitleCol.setEditable(true);
+        bookTitleCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
+                    try {
+                        // Update book title only if there's no other books with the same title already in the database
+                        Book book = mc.getBookByTitle(event.getNewValue());
+                        if (book == null) {
+                            book = new Book(event.getNewValue());
+                            mc.updateBook(book);
+                        } else {
+                            showPopupError("Error", "A book with that title already exists in the database.");
+                        }
+                    } catch (Exception e) {
+                        showPopupErrorWithExceptionStack(e);
+                    }
+                });
+        return bookTitleCol;
+    }
+
+    private TableColumn<BookAuthorView, Integer> getAuthorIdColumn() {
+        TableColumn<BookAuthorView, Integer> authorIdCol = new TableColumn<>("Author ID");
+        authorIdCol.setCellValueFactory(f -> new SimpleIntegerProperty(f.getValue().getAuthor().getId()).asObject());
+        return authorIdCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getAuthorNameColumn() {
+        TableColumn<BookAuthorView, String> authorNameCol = new TableColumn<>("Author");
+        authorNameCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getAuthor().getName()));
+        authorNameCol.setEditable(true);
+        authorNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        authorNameCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
+                    try {
+                        Author author = mc.getAuthorByName(event.getNewValue());
+                        if (author == null) {
+                            author = new Author(event.getNewValue());
+                            mc.insertAuthor(author);
+                        }
+                        BookAuthorView bav = event.getRowValue();
+                        bav.setAuthor(author);
+                        event.getTableView().getItems().set(event.getTablePosition().getRow(), bav);
+                    } catch (Exception ex) {
+                        showPopupErrorWithExceptionStack(ex);
+                    }
+                });
+        return authorNameCol;
+    }
+
+    private TableColumn<BookAuthorView, Integer> getPublisherIdColumn() {
+        TableColumn<BookAuthorView, Integer> publisherIdCol = new TableColumn<>("Publisher ID");
+        publisherIdCol.setCellValueFactory(f -> f.getValue().getBook().getPublisher() != null
+                ? new SimpleIntegerProperty(f.getValue().getBook().getPublisher().getId()).asObject()
+                : null);
+        publisherIdCol.setEditable(false);
+        return publisherIdCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getPublisherNameColumn() {
+        TableColumn<BookAuthorView, String> publisherNameCol = new TableColumn<>("Publisher");
+        publisherNameCol.setCellValueFactory(f -> f.getValue().bookProperty().getValue().getPublisher() != null
+                ? new SimpleStringProperty(f.getValue().getBook().getPublisher().getName())
+                : null);
+        publisherNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        publisherNameCol.setEditable(true);
+        publisherNameCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
+                    try {
+                        // Check if the Publisher record with the entered name already exists in database, if so, assign
+                        // it, otherwise, create and then assign
+                        Publisher record = mc.getPublisherByName(event.getNewValue());
+                        if (record == null) {
+                            record = new Publisher();
+                            record.setName(event.getNewValue());
+                            mc.insertPublisher(record);
+                        }
+                        BookAuthorView bav = event.getRowValue();
+                        bav.getBook().setPublisher(record);
+                        mc.updateBook(bav.getBook());
+                        event.getTableView().getItems().set(event.getTablePosition().getRow(), event.getRowValue());
+                    } catch (Exception e) {
+                        showPopupErrorWithExceptionStack(e, "Error while updating publisher name.");
+                    }
+                }
+        );
+        return publisherNameCol;
+    }
+
+    private TableColumn<BookAuthorView, Integer> getSeriesIdColumn() {
+        TableColumn<BookAuthorView, Integer> seriesIdCol = new TableColumn<>("Series ID");
+        seriesIdCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
+                ? new SimpleIntegerProperty(f.getValue().getBook().getSeries().getId()).asObject()
+                : null);
+        return seriesIdCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getSeriesNameColumn() {
+        TableColumn<BookAuthorView, String> seriesNameCol = new TableColumn<>("Series");
+        seriesNameCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
+                ? new SimpleStringProperty(f.getValue().getBook().getSeries().getName())
+                : null);
+        // TODO: implement edit
+        return seriesNameCol;
+    }
+
+    private TableColumn<BookAuthorView, Double> getSeriesNumberColumn() {
+        TableColumn<BookAuthorView, Double> seriesNumberCol = new TableColumn<>("Series #");
+        seriesNumberCol.setCellValueFactory(f -> new SimpleDoubleProperty(f.getValue().getBook().getSeriesNumber()).asObject());
+        seriesNumberCol.setCellFactory(TextFieldTableCell.forTableColumn(new CustomDoubleStringConverter()));
+        seriesNumberCol.setEditable(true);
+        seriesNumberCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, Double> event) -> {
+                    try {
+                        Book updatedBook = event.getRowValue().getBook();
+                        updatedBook.setSeriesNumber(event.getNewValue());
+                        mc.updateBook(updatedBook);
+                        event.getRowValue().getBook().setSeriesNumber(event.getNewValue());
+                    } catch (DAOException e) {
+                        showPopupErrorWithExceptionStack(e);
+                    }
+                });
+        return seriesNumberCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getDatePublishedColumn() {
+        TableColumn<BookAuthorView, String> datePublishedCol = new TableColumn<>("Date Published");
+        datePublishedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPublishDate().toString()));
+        // TODO: implement edit
+        return datePublishedCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getDateAddedColumn() {
+        TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
+        dateAddedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getAddedDate().toString()));
+        return dateAddedCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getDateModifiedColumn() {
+        TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
+        dateModifiedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getModifiedDate().toString()));
+        return dateModifiedCol;
+    }
+
+    private TableColumn<BookAuthorView, String> getPathColumn() {
+        TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
+        pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
+        return pathCol;
+    }
 }
