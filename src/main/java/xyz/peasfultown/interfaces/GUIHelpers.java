@@ -42,7 +42,7 @@ public class GUIHelpers {
     public static void showPopupErrorWithExceptionStack(Exception ex) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Exception occurred");
-        alert.setHeaderText(ex.getMessage());
+        alert.setHeaderText("An exception has occurred during program runtime.");
         alert.setContentText(ex.getMessage());
         alert.setResizable(true);
         alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);

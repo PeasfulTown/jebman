@@ -288,6 +288,14 @@ public class MainController {
         return null;
     }
 
+    public Set<Book> getBooks() {
+        return this.bookSet;
+    }
+
+    public Book getBookByTitle(String title) {
+        return this.bookSet.getByName(title);
+    }
+
     public Set<Series> getSeries() {
         return this.seriesSet;
     }
@@ -296,30 +304,20 @@ public class MainController {
         return this.publisherSet;
     }
 
-    public Publisher getLastInsertedPublisher() {
-        Iterator<Publisher> iPublishers = this.publisherSet.iterator();
-        Publisher publisher = null;
-        while (iPublishers.hasNext()) {
-            publisher = iPublishers.next();
-        }
-        return publisher;
+    public Publisher getPublisherByName(String name) {
+        return this.publisherSet.getByName(name);
     }
 
     public Set<Author> getAuthors() {
         return this.authorSet;
     }
 
-    public Author getLastInsertedAuthor() {
-        Iterator<Author> iAuthors = this.authorSet.iterator();
-        Author author = null;
-        while (iAuthors.hasNext()) {
-            author = iAuthors.next();
-        }
-        return author;
+    public Author getAuthorByName(String name) {
+        return this.authorSet.getByName(name);
     }
 
-    public Set<Book> getBooks() {
-        return this.bookSet;
+    public Set<BookAuthor> getBookAuthorLinks() {
+        return this.bookAuthorLinkSet;
     }
 
     public Book getLastInsertedBook() {
@@ -331,8 +329,22 @@ public class MainController {
         return book;
     }
 
-    public Set<BookAuthor> getBookAuthorLinks() {
-        return this.bookAuthorLinkSet;
+    public Publisher getLastInsertedPublisher() {
+        Iterator<Publisher> iPublishers = this.publisherSet.iterator();
+        Publisher publisher = null;
+        while (iPublishers.hasNext()) {
+            publisher = iPublishers.next();
+        }
+        return publisher;
+    }
+
+    public Author getLastInsertedAuthor() {
+        Iterator<Author> iAuthors = this.authorSet.iterator();
+        Author author = null;
+        while (iAuthors.hasNext()) {
+            author = iAuthors.next();
+        }
+        return author;
     }
 }
 
