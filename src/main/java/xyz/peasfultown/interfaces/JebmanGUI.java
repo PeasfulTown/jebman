@@ -24,6 +24,7 @@ import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.domain.Author;
 import xyz.peasfultown.domain.Book;
 import xyz.peasfultown.domain.Publisher;
+import xyz.peasfultown.domain.Series;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -302,7 +303,23 @@ public class JebmanGUI extends Application {
         seriesNameCol.setCellValueFactory(f -> f.getValue().getBook().getSeries() != null
                 ? new SimpleStringProperty(f.getValue().getBook().getSeries().getName())
                 : null);
-        // TODO: implement edit
+        seriesNameCol.setEditable(true);
+        seriesNameCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        seriesNameCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
+                    try {
+                        Series series = mc.readSeriesByName(event.getNewValue());
+                        if (series == null) {
+                            series = new Series(event.getNewValue());
+                            mc.insertSeries(series);
+                        }
+                        BookAuthorView bav = event.getRowValue();
+                        bav.getBook().setSeries(series);
+                        event.getTableView().getItems().set(event.getTablePosition().getRow(), bav);
+                    } catch (Exception e) {
+                        showPopupErrorWithExceptionStack(e);
+                    }
+                });
         return seriesNameCol;
     }
 
@@ -335,18 +352,21 @@ public class JebmanGUI extends Application {
     private TableColumn<BookAuthorView, String> getDateAddedColumn() {
         TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
         dateAddedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getAddedDate().toString()));
+        // TODO: implement edit
         return dateAddedCol;
     }
 
     private TableColumn<BookAuthorView, String> getDateModifiedColumn() {
         TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
         dateModifiedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getModifiedDate().toString()));
+        // TODO: implement edit
         return dateModifiedCol;
     }
 
     private TableColumn<BookAuthorView, String> getPathColumn() {
         TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
+        // TODO: implement edit
         return pathCol;
     }
 }

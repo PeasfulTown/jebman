@@ -97,6 +97,11 @@ public class MainController {
         insertBook(file);
     }
 
+    public void insertSeries(Series series) throws DAOException {
+        this.seriesDAO.create(series);
+        this.seriesSet.add(series);
+    }
+
     public void insertPublisher(Publisher publisher) throws DAOException {
         this.publisherDAO.create(publisher);
         this.publisherSet.add(publisher);
