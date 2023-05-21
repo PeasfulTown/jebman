@@ -369,15 +369,23 @@ public class JebmanGUI extends Application {
 
     private TableColumn<BookAuthorView, String> getDateAddedColumn() {
         TableColumn<BookAuthorView, String> dateAddedCol = new TableColumn<>("Date Added");
+
+        Callback<TableColumn<BookAuthorView, String>, TableCell<BookAuthorView, String>> cellFactory
+                = (TableColumn<BookAuthorView, String> param) -> new CustomDateCell();
+
         dateAddedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getAddedDate().toString()));
-        // TODO: implement edit
+        dateAddedCol.setCellFactory(cellFactory);
         return dateAddedCol;
     }
 
     private TableColumn<BookAuthorView, String> getDateModifiedColumn() {
         TableColumn<BookAuthorView, String> dateModifiedCol = new TableColumn<>("Date Modified");
+
+        Callback<TableColumn<BookAuthorView, String>, TableCell<BookAuthorView, String>> cellFactory
+                = (TableColumn<BookAuthorView, String> param) -> new CustomDateCell();
+
         dateModifiedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getModifiedDate().toString()));
-        // TODO: implement edit
+        dateModifiedCol.setCellFactory(cellFactory);
         return dateModifiedCol;
     }
 
