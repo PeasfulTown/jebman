@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Locale;
 
 public class DatePickerCell extends TableCell<BookAuthorView, String> {
     private DatePicker datePicker;
@@ -30,7 +31,7 @@ public class DatePickerCell extends TableCell<BookAuthorView, String> {
     public void cancelEdit() {
         super.cancelEdit();
 
-        setText(getDate().toString());
+        setText(LocalDate.ofInstant(getDate(), ZoneOffset.UTC).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)));
         setGraphic(null);
     }
 
@@ -49,7 +50,7 @@ public class DatePickerCell extends TableCell<BookAuthorView, String> {
                 setText(null);
                 setGraphic(datePicker);
             } else {
-                setText(getDate().toString());
+                setText(LocalDate.ofInstant(getDate(), ZoneOffset.UTC).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)));
                 setGraphic(null);
             }
         }
