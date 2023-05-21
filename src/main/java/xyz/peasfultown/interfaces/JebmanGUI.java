@@ -26,6 +26,7 @@ import xyz.peasfultown.domain.Series;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -350,8 +351,19 @@ public class JebmanGUI extends Application {
         datePublishedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPublishDate().toString()));
         datePublishedCol.setEditable(true);
         datePublishedCol.setCellFactory(cellfactory);
-
-        // TODO: implement edit
+        datePublishedCol.setOnEditCommit(
+                (TableColumn.CellEditEvent<BookAuthorView, String> event) -> {
+                    Book book = event.getRowValue().getBook();
+                    try {
+                        book.setPublishDate(Instant.parse(event.getNewValue()));
+                        mc.updateBook(book);
+                    } catch (Exception e) {
+                        showPopupErrorWithExceptionStack(e);
+                    }
+                    BookAuthorView bav = event.getRowValue();
+                    bav.setBook(book);
+                    event.getTableView().getItems().set(event.getTablePosition().getRow(), bav);
+                });
         return datePublishedCol;
     }
 

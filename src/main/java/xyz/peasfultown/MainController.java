@@ -136,6 +136,7 @@ public class MainController {
     }
 
     public void updateBook(Book bookToUpdate) throws DAOException {
+        bookToUpdate.setModifiedDate(Instant.now());
         this.bookDAO.update(bookToUpdate);
         Book book = this.bookSet.stream().filter(b -> b.getId() == bookToUpdate.getId()).findFirst().get();
         this.bookSet.remove(book);
