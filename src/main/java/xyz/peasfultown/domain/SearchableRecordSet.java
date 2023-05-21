@@ -13,7 +13,7 @@ public class SearchableRecordSet<R extends Record> extends LinkedHashSet<R> {
 
     public R getByName(String name) {
         for (R r : this) {
-            if (r.getName().equals(name))
+            if (r.getName().equalsIgnoreCase(name))
                 return r;
         }
         return null;

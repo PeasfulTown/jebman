@@ -32,11 +32,11 @@ import java.util.Set;
  */
 public class MainController {
     private final Path mainPath;
-    private SearchableRecordSet<Book> booksMap;
-    private SearchableRecordSet<Series> seriesMap;
-    private SearchableRecordSet<Publisher> publishersMap;
-    private SearchableRecordSet<Author> authorsMap;
-    private SearchableRecordSet<BookAuthor> bookAuthorMap;
+    private SearchableRecordSet<Book> bookSet;
+    private SearchableRecordSet<Series> seriesSet;
+    private SearchableRecordSet<Publisher> publisherSet;
+    private SearchableRecordSet<Author> authorSet;
+    private SearchableRecordSet<BookAuthor> bookAuthorLinkSet;
     private GenericDAO<Book> bookDAO;
     private GenericDAO<Series> seriesDAO;
     private GenericDAO<Publisher> publisherDAO;
@@ -80,13 +80,13 @@ public class MainController {
             this.authorDAO = new JDBCAuthorDAO();
             this.bookAuthorDAO = new JDBCBookAuthorDAO();
 
-            this.seriesMap = (SearchableRecordSet<Series>) this.getAllSeries();
-            this.publishersMap = (SearchableRecordSet<Publisher>) this.getAllPublishers();
-            this.authorsMap = (SearchableRecordSet<Author>) this.getAllAuthors();
-            this.bookAuthorMap = (SearchableRecordSet<BookAuthor>) this.getAllBookAuthorLinks();
+            this.seriesSet = (SearchableRecordSet<Series>) this.readAllSeries();
+            this.publisherSet = (SearchableRecordSet<Publisher>) this.readAllPublishers();
+            this.authorSet = (SearchableRecordSet<Author>) this.readAllAuthors();
+            this.bookAuthorLinkSet = (SearchableRecordSet<BookAuthor>) this.readAllBookAuthorLinks();
 
-            this.bookDAO = new JDBCBookDAO(seriesMap, publishersMap);
-            this.booksMap = (SearchableRecordSet<Book>) this.getAllBooks();
+            this.bookDAO = new JDBCBookDAO(seriesSet, publisherSet);
+            this.bookSet = (SearchableRecordSet<Book>) this.readAllBooks();
         } catch (DAOException e) {
             System.err.println("Unable to populate collections.");
         }
@@ -95,6 +95,21 @@ public class MainController {
     public void insertBook(String filePath) throws DAOException, IOException, MetadataReaderException {
         Path file = Path.of(filePath);
         insertBook(file);
+    }
+
+    public void insertSeries(Series series) throws DAOException {
+        this.seriesDAO.create(series);
+        this.seriesSet.add(series);
+    }
+
+    public void insertPublisher(Publisher publisher) throws DAOException {
+        this.publisherDAO.create(publisher);
+        this.publisherSet.add(publisher);
+    }
+
+    public void insertAuthor(Author author) throws DAOException {
+        this.authorDAO.create(author);
+        this.authorSet.add(author);
     }
 
     /**
@@ -117,7 +132,15 @@ public class MainController {
                 book.getTitle(),
                 book.getId(),
                 metadata.get("filetype"));
-        this.booksMap.add(book);
+        this.bookSet.add(book);
+    }
+
+    public void updateBook(Book bookToUpdate) throws DAOException {
+        bookToUpdate.setModifiedDate(Instant.now());
+        this.bookDAO.update(bookToUpdate);
+        Book book = this.bookSet.stream().filter(b -> b.getId() == bookToUpdate.getId()).findFirst().get();
+        this.bookSet.remove(book);
+        this.bookSet.add(bookToUpdate);
     }
 
     public void removeBook(int id) throws DAOException, IOException {
@@ -131,33 +154,57 @@ public class MainController {
         Files.walkFileTree(pathToRemove, td);
 
         bookDAO.delete(book.getId());
-        booksMap.remove(book);
+        bookSet.remove(book);
     }
 
-    private Set<Publisher> getAllPublishers() throws DAOException {
+    public Set<Publisher> readAllPublishers() throws DAOException {
         return publisherDAO.readAll();
     }
 
-    private Set<Series> getAllSeries() throws DAOException {
+    public Publisher readPublisherById(int id) throws DAOException {
+        return publisherDAO.read(id);
+    }
+
+    public Publisher readPublisherByName(String name) throws DAOException {
+        return publisherDAO.read(name);
+    }
+
+    public Set<Series> readAllSeries() throws DAOException {
         return seriesDAO.readAll();
     }
 
-    private Set<Author> getAllAuthors() throws DAOException {
+    public Series readSeriesById(int id) throws DAOException {
+        return seriesDAO.read(id);
+    }
+
+    public Series readSeriesByName(String name) throws DAOException {
+        return seriesDAO.read(name);
+    }
+
+    public Set<Author> readAllAuthors() throws DAOException {
         return authorDAO.readAll();
     }
 
-    private Set<BookAuthor> getAllBookAuthorLinks() throws DAOException {
+    public Author readAuthorById(int id) throws DAOException {
+        return authorDAO.read(id);
+    }
+
+    public Author readAuthorByName(String name) throws DAOException {
+        return authorDAO.read(name);
+    }
+
+    public Set<BookAuthor> readAllBookAuthorLinks() throws DAOException {
         return bookAuthorDAO.readAll();
     }
 
-    private Set<Book> getAllBooks() throws DAOException {
+    public Set<Book> readAllBooks() throws DAOException {
         return bookDAO.readAll();
     }
 
     public Author getBookAuthorByBookId(int id) {
-        for(BookAuthor ba : bookAuthorMap) {
+        for(BookAuthor ba : bookAuthorLinkSet) {
             if (ba.getBookId() == id)
-                return this.authorsMap.getById(ba.getAuthorId());
+                return this.authorSet.getById(ba.getAuthorId());
         }
         System.out.println("Cannot find Author");
         return null;
@@ -190,7 +237,7 @@ public class MainController {
         Book book = new Book();
         book.setTitle(meta.getOrDefault("title", meta.get("filename")));
 
-        if (booksMap.getByName(book.getTitle()) != null) {
+        if (bookSet.getByName(book.getTitle()) != null) {
             throw new RecordAlreadyExistsException("Book already exists in records.");
         }
 
@@ -221,68 +268,66 @@ public class MainController {
     private void addBookAuthorLink(int bookId, int authorId) throws DAOException {
         BookAuthor ba = new BookAuthor(bookId, authorId);
         this.bookAuthorDAO.create(ba);
-        this.bookAuthorMap.add(ba);
+        this.bookAuthorLinkSet.add(ba);
     }
 
     private Author createAuthorFromName(String name) throws DAOException {
-        Author author = authorsMap.getByName(name);
+        Author author = authorSet.getByName(name);
         if (author == null) {
             author = new Author(name);
             authorDAO.create(author);
-            this.authorsMap.add(author);
+            this.authorSet.add(author);
         }
         return author;
     }
 
     private Publisher createPublisherFromName(String publisherName) throws DAOException {
         if (publisherName != null) {
-            Publisher publisher = publishersMap.getByName(publisherName);
+            Publisher publisher = publisherSet.getByName(publisherName);
             if (publisher == null) {
                 publisher = new Publisher(publisherName);
                 publisherDAO.create(publisher);
-                this.publishersMap.add(publisher);
+                this.publisherSet.add(publisher);
             }
             return publisher;
         }
         return null;
     }
 
+    public Set<Book> getBooks() {
+        return this.bookSet;
+    }
+
+    public Book getBookByTitle(String title) {
+        return this.bookSet.getByName(title);
+    }
+
     public Set<Series> getSeries() {
-        return this.seriesMap;
+        return this.seriesSet;
     }
 
     public Set<Publisher> getPublishers() {
-        return this.publishersMap;
+        return this.publisherSet;
     }
 
-    public Publisher getLastInsertedPublisher() {
-        Iterator<Publisher> iPublishers = this.publishersMap.iterator();
-        Publisher publisher = null;
-        while (iPublishers.hasNext()) {
-            publisher = iPublishers.next();
-        }
-        return publisher;
+    public Publisher getPublisherByName(String name) {
+        return this.publisherSet.getByName(name);
     }
 
     public Set<Author> getAuthors() {
-        return this.authorsMap;
+        return this.authorSet;
     }
 
-    public Author getLastInsertedAuthor() {
-        Iterator<Author> iAuthors = this.authorsMap.iterator();
-        Author author = null;
-        while (iAuthors.hasNext()) {
-            author = iAuthors.next();
-        }
-        return author;
+    public Author getAuthorByName(String name) {
+        return this.authorSet.getByName(name);
     }
 
-    public Set<Book> getBooks() {
-        return this.booksMap;
+    public Set<BookAuthor> getBookAuthorLinks() {
+        return this.bookAuthorLinkSet;
     }
 
     public Book getLastInsertedBook() {
-        Iterator<Book> iBooks = this.booksMap.iterator();
+        Iterator<Book> iBooks = this.bookSet.iterator();
         Book book = null;
         while (iBooks.hasNext()) {
             book = iBooks.next();
@@ -290,8 +335,22 @@ public class MainController {
         return book;
     }
 
-    public Set<BookAuthor> getBookAuthorLinks() {
-        return this.bookAuthorMap;
+    public Publisher getLastInsertedPublisher() {
+        Iterator<Publisher> iPublishers = this.publisherSet.iterator();
+        Publisher publisher = null;
+        while (iPublishers.hasNext()) {
+            publisher = iPublishers.next();
+        }
+        return publisher;
+    }
+
+    public Author getLastInsertedAuthor() {
+        Iterator<Author> iAuthors = this.authorSet.iterator();
+        Author author = null;
+        while (iAuthors.hasNext()) {
+            author = iAuthors.next();
+        }
+        return author;
     }
 }
 

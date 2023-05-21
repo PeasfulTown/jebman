@@ -1,6 +1,11 @@
 package xyz.peasfultown.interfaces;
 
 import javafx.beans.property.*;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Publisher;
+import xyz.peasfultown.domain.Series;
+
+import java.time.Instant;
 
 public class BookView {
     private final IntegerProperty id = new SimpleIntegerProperty();
@@ -13,9 +18,10 @@ public class BookView {
     private final StringProperty datePublished = new SimpleStringProperty();
     private final StringProperty dateAdded = new SimpleStringProperty();
     private final StringProperty dateModified = new SimpleStringProperty();
+    private final StringProperty path = new SimpleStringProperty();
 
     public BookView(int id, String isbn, String uuid, String title, SeriesView series, double seriesNumber,
-                    PublisherView publisher, String datePublished, String dateAdded, String dateModified) {
+                    PublisherView publisher, String datePublished, String dateAdded, String dateModified, String path) {
         this.id.set(id);
         this.isbn.set(isbn);
         this.uuid.set(uuid);
@@ -26,6 +32,7 @@ public class BookView {
         this.datePublished.set(datePublished);
         this.dateAdded.set(dateAdded);
         this.dateModified.set(dateModified);
+        this.path.set(path);
     }
 
     public int getId() {
@@ -146,5 +153,31 @@ public class BookView {
 
     public void setDateModified(String dateModified) {
         this.dateModified.set(dateModified);
+    }
+
+    public String getPath() {
+        return path.get();
+    }
+
+    public StringProperty pathProperty() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path.set(path);
+    }
+
+    public Book getValue() {
+        return new Book(this.getId(), this.getIsbn(), this.getUuid(), this.getTitle(),
+                this.getSeries() != null
+                        ? this.getSeries().getValue()
+                        : null, this.getSeriesNumber(),
+                this.getPublisher() != null
+                        ? this.getPublisher().getValue()
+                        : null,
+                Instant.parse(this.getDatePublished()),
+                Instant.parse(this.getDateAdded()),
+                Instant.parse(this.getDateModified()),
+                this.getPath());
     }
 }

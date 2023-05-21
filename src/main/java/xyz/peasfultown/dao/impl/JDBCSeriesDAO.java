@@ -18,6 +18,11 @@ public class JDBCSeriesDAO extends JDBCAbstractDAO<Series> {
     }
 
     @Override
+    protected String getLastInsertedRowQuery() {
+        return "SELECT * FROM series WHERE id=(SELECT MAX(id) FROM series);";
+    }
+
+    @Override
     protected String getUpdateQuery() {
         return "UPDATE series SET name=? WHERE id=?;";
     }

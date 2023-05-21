@@ -38,4 +38,8 @@ public class AuthorView {
     public void setName(String name) {
         this.name.set(name);
     }
+
+    public Author getValue() {
+        return new Author(this.getId(), this.getName());
+    }
 }

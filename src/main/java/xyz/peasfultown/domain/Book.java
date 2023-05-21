@@ -48,7 +48,7 @@ public class Book implements Record {
     }
 
     public Book(int id, String isbn, String uuid, String title, Series series, Double seriesNumber, Publisher publisher,
-                Instant publishDate, Instant addedDate, Instant modifiedDate) {
+                Instant publishDate, Instant addedDate, Instant modifiedDate, String path) {
         this(isbn, uuid, title, publishDate);
         this.id = id;
         this.series = series;
@@ -56,6 +56,7 @@ public class Book implements Record {
         this.publisher = publisher;
         this.addedDate = addedDate.truncatedTo(ChronoUnit.SECONDS);
         this.modifiedDate = modifiedDate.truncatedTo(ChronoUnit.SECONDS);
+        this.path = path;
     }
 
     public int getId() {
