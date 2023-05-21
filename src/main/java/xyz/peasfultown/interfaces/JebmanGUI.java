@@ -392,7 +392,6 @@ public class JebmanGUI extends Application {
     private TableColumn<BookAuthorView, String> getPathColumn() {
         TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
-        // TODO: implement edit
         return pathCol;
     }
 }
