@@ -10,14 +10,12 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
@@ -30,6 +28,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Set;
 
 import static xyz.peasfultown.interfaces.GUIHelpers.*;
@@ -344,7 +343,14 @@ public class JebmanGUI extends Application {
 
     private TableColumn<BookAuthorView, String> getDatePublishedColumn() {
         TableColumn<BookAuthorView, String> datePublishedCol = new TableColumn<>("Date Published");
+
+        Callback<TableColumn<BookAuthorView, String>, TableCell<BookAuthorView, String>> cellfactory
+                = (TableColumn<BookAuthorView, String> param) -> new DatePickerCell();
+
         datePublishedCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPublishDate().toString()));
+        datePublishedCol.setEditable(true);
+        datePublishedCol.setCellFactory(cellfactory);
+
         // TODO: implement edit
         return datePublishedCol;
     }
