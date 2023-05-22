@@ -5,6 +5,10 @@ public class ThumbnailGeneratorException extends Exception {
         super();
     }
 
+    public ThumbnailGeneratorException(String message) {
+        super(message);
+    }
+
     public ThumbnailGeneratorException(String message, Throwable cause) {
         super(message, cause);
     }

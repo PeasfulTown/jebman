@@ -1,5 +1,6 @@
 package xyz.peasfultown.helpers;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import xyz.peasfultown.ApplicationDefaults;
 
@@ -17,5 +18,13 @@ class ThumbnailGeneratorTest {
         ThumbnailGenerator.generatePDFThumbnail(dummyPDF, Path.of(TEMP_PATH).resolve("dummyThumb.png"));
 
         assertTrue(Files.exists(Path.of(TEMP_PATH).resolve("dummyThumb.png")));
+    }
+
+    @Test
+    void generateEpubThumb() throws Exception {
+        File dummyEpub = new File(getClass().getClassLoader().getResource("gatsby.epub").getFile());
+        ThumbnailGenerator.generateEpubThumbnail(dummyEpub, Path.of(TEMP_PATH).resolve("gatsbyThumb.png"));
+
+        assertTrue(Files.exists(Path.of(TEMP_PATH).resolve("gatsbyThumb.png")));
     }
 }
