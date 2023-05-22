@@ -1,15 +1,14 @@
 package xyz.peasfultown.helpers;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import xyz.peasfultown.ApplicationDefaults;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ThumbnailGeneratorTest {
     private static final String TEMP_PATH = ApplicationDefaults.TEMPORARY_PATH;
