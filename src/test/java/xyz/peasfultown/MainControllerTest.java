@@ -5,21 +5,22 @@
  */
 package xyz.peasfultown;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
-import static xyz.peasfultown.TestHelpers.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static xyz.peasfultown.TestHelpers.cleanupPath;
+import static xyz.peasfultown.TestHelpers.insertTestBooks;
 
 
 public class MainControllerTest {
@@ -31,12 +32,13 @@ public class MainControllerTest {
     static MainController mc = null;
 
     @BeforeAll
-    static void setup() {
+    static void setup() throws Exception {
+        cleanupPath(mainPath);
         ApplicationConfig.setMainPath(mainPath);
     }
 
-    @AfterEach
-    void cleanupEach() {
+    @BeforeEach
+    void cleanup() throws Exception {
         cleanupPath(mainPath);
     }
 

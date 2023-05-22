@@ -26,7 +26,7 @@ class JebmanPromptTest {
     }
 
     @AfterAll
-    static void cleanup() {
+    static void cleanup() throws Exception {
         cleanupPath(MAIN_PATH);
     }
 

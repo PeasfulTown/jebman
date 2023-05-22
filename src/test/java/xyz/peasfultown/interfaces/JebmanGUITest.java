@@ -14,7 +14,7 @@ import static xyz.peasfultown.TestHelpers.*;
 class JebmanGUITest {
     private static final Logger logger = LoggerFactory.getLogger(JebmanGUITest.class);
     @BeforeAll
-    static void setup() {
+    static void setup() throws Exception {
         ApplicationConfig.setMainPath(ApplicationDefaults.TEMPORARY_PATH);
         cleanupPath(ApplicationConfig.MAIN_PATH);
     }

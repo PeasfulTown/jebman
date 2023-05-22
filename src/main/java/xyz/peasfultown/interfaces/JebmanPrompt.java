@@ -188,6 +188,8 @@ public class JebmanPrompt {
             out.format("Failed to add book to jebman library: %s%n", e.getMessage());
         } catch (MetadataReaderException e) {
             out.format("Failed to read book metadata: %s%n", e.getMessage());
+        } catch (Exception e) {
+            out.format("Exception while inserting book to jebman: %s%n", e.getMessage());
         }
     }
 
