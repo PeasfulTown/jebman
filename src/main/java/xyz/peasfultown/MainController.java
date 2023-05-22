@@ -92,7 +92,7 @@ public class MainController {
         }
     }
 
-    public void insertBook(String filePath) throws DAOException, IOException, MetadataReaderException {
+    public void insertBook(String filePath) throws Exception {
         Path file = Path.of(filePath);
         insertBook(file);
     }
@@ -119,19 +119,26 @@ public class MainController {
      * @throws IOException
      * @throws XMLStreamException
      */
-    public void insertBook(Path file) throws DAOException, IOException, MetadataReaderException {
+    public void insertBook(Path file) throws Exception {
         if (!Files.exists(file))
             throw new FileNotFoundException("File does not exist.");
 
         HashMap<String, String> metadata = MetaReader.getMetadata(file);
         Book book = null;
         book = createRecordsFromMetadata(metadata);
-        addBookToDirectory(file, metadata
-                        .getOrDefault("author", metadata
-                                .getOrDefault("creator", "Unknown")),
-                book.getTitle(),
-                book.getId(),
+        String authorName = metadata
+                .getOrDefault("author", metadata.getOrDefault("creator", "Unknown"));
+
+        Path targetPath = getBookTargetDirectoryPath(authorName, book.getTitle(), book.getId())
+                .resolve(getBookFileName(book.getTitle(), metadata.get("filetype")));
+
+        addBookToPath(file, targetPath);
+
+        createThumbnail(
+                targetPath.toFile(),
+                targetPath.getParent().resolve("cover.png"),
                 metadata.get("filetype"));
+
         this.bookSet.add(book);
     }
 
@@ -202,7 +209,7 @@ public class MainController {
     }
 
     public Author getBookAuthorByBookId(int id) {
-        for(BookAuthor ba : bookAuthorLinkSet) {
+        for (BookAuthor ba : bookAuthorLinkSet) {
             if (ba.getBookId() == id)
                 return this.authorSet.getById(ba.getAuthorId());
         }
@@ -221,16 +228,21 @@ public class MainController {
                 .append(' ').append('(').append(id).append(')').toString();
     }
 
-    private void addBookToDirectory(Path file, String authorName, String bookTitle, int id, String fileType) throws IOException {
-        Path destDir = Path.of(mainPath.toString(), getRelativePathToBook(authorName, bookTitle, id));
+    private void addBookToPath(Path file, Path target) throws IOException {
+        Path destDir = target.getParent();
 
         if (!Files.isDirectory(destDir) || !Files.exists(destDir)) {
             Files.createDirectories(destDir);
         }
-        Path target = destDir.resolve(String.format("%s.%s",
-                bookTitle,
-                fileType));
         Files.copy(file, target);
+    }
+
+    private Path getBookTargetDirectoryPath(String authorName, String bookTitle, int id) {
+        return Path.of(mainPath.toString(), getRelativePathToBook(authorName, bookTitle, id));
+    }
+
+    private String getBookFileName(String bookTitle, String fileType) {
+        return String.format("%s.%s", bookTitle, fileType);
     }
 
     private Book createRecordsFromMetadata(HashMap<String, String> meta) throws DAOException {
@@ -292,6 +304,24 @@ public class MainController {
             return publisher;
         }
         return null;
+    }
+
+    private void createThumbnail(File file, Path targetLocation, String fileType) throws ThumbnailGeneratorException {
+        try {
+            switch (fileType.toLowerCase()) {
+                case "pdf":
+                    ThumbnailGenerator.generatePDFThumbnail(file, targetLocation);
+                    break;
+                case "epub":
+                    ThumbnailGenerator.generateEpubThumbnail(file, targetLocation);
+                    break;
+                default:
+                    throw new ThumbnailGeneratorException(String.format("Error while trying to generate thumbnail for %s%n", file.getName()));
+            }
+
+        } catch (ThumbnailGeneratorException e) {
+            throw e;
+        }
     }
 
     public Set<Book> getBooks() {
