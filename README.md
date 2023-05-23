@@ -31,6 +31,11 @@ Supported ebook formats: .epub, .mobi, .pdf
 - An ebook converter
 
 
+# Requirements
+
+- Java 11 & JavaFX 11
+- [ImageMagick](https://imagemagick.org/index.php) for generating thumbnails
+
 # Checklist
 
 - [ ] Allow to edit metadata
