@@ -1,3 +1,7 @@
+# WIP
+
+This program is still in very early development and I am still learning as I go. Please be patient.
+
 # jebman - `j`ava `eb`ook `man`ager
 
 jebman is an offline ebooks manager written in java.
