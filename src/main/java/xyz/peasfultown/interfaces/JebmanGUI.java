@@ -4,18 +4,24 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableDoubleValue;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
@@ -25,17 +31,19 @@ import xyz.peasfultown.domain.Publisher;
 import xyz.peasfultown.domain.Series;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Set;
 
 import static xyz.peasfultown.interfaces.GUIHelpers.*;
 
 // TODO: handle book series edit
 public class JebmanGUI extends Application {
+    private Stage stage;
+    private final VBox infoPanel = new VBox();
     private static MainController mc;
 
     private final ObservableList<BookAuthorView> data = FXCollections.observableList(new ArrayList<>());
@@ -47,12 +55,13 @@ public class JebmanGUI extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        this.stage = stage;
         stage.setTitle("Jebman - Ebooks Manager");
         stage.setMinHeight(300);
         stage.setMinWidth(600);
 
         AnchorPane anchor = new AnchorPane();
-        GridPane layout = getLayout(stage);
+        GridPane layout = getLayout();
         anchor.getChildren().addAll(layout);
         AnchorPane.setTopAnchor(layout, 10.0);
         AnchorPane.setBottomAnchor(layout, 10.0);
@@ -64,7 +73,7 @@ public class JebmanGUI extends Application {
         stage.show();
     }
 
-    private GridPane getLayout(Stage stage) {
+    private GridPane getLayout() {
         GridPane mainGrid = new GridPane();
         mainGrid.setHgap(10);
         mainGrid.setVgap(10);
@@ -73,8 +82,8 @@ public class JebmanGUI extends Application {
 
         ColumnConstraints col1 = new ColumnConstraints();
         ColumnConstraints col2 = new ColumnConstraints();
-        col1.setPercentWidth(20);
-        col2.setPercentWidth(80);
+        col1.setPrefWidth(200);
+        col2.setHgrow(Priority.ALWAYS);
         mainGrid.getColumnConstraints().addAll(col1, col2);
 
         RowConstraints row1 = new RowConstraints();
@@ -83,7 +92,7 @@ public class JebmanGUI extends Application {
         row2.setVgrow(Priority.ALWAYS);
         mainGrid.getRowConstraints().addAll(row1, row2);
 
-        mainGrid.add(getTopBar(stage), 0, 0, 2, 1);
+        mainGrid.add(getTopBar(), 0, 0, 2, 1);
         mainGrid.add(getBookInfoPanel(), 0, 1);
         mainGrid.add(getBookTable(), 1, 1);
 
@@ -91,13 +100,15 @@ public class JebmanGUI extends Application {
     }
 
     private VBox getBookInfoPanel() {
-        final VBox panel = new VBox();
-        // TODO: add info pane
-        Label placeHolder = new Label("Info goes here");
-        panel.getChildren().addAll(placeHolder);
-        panel.setPadding(new Insets(10, 10, 10, 10));
+        Label placeHolderText = new Label("Info goes here");
+        // TODO: use generated thumbnail if exists, use placeholder `nocover.png` thumbnail if not exist
+        ImageView cover = new ImageView(new Image(getClass().getClassLoader().getResourceAsStream("nocover.png")));
+        cover.setPreserveRatio(true);
+        cover.setFitWidth(150);
+        this.infoPanel.getChildren().addAll(placeHolderText, cover);
+        this.infoPanel.setPadding(new Insets(10, 10, 10, 10));
 
-        return panel;
+        return infoPanel;
     }
 
     private TableView<BookAuthorView> getBookTable() {
@@ -132,10 +143,21 @@ public class JebmanGUI extends Application {
         data.addAll(collectBookAuthorViewItems());
         table.setItems(data);
 
+        table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorView, t1) -> {
+            System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
+            ((Label) infoPanel.getChildren().get(0)).setText("test" + bookAuthorView.getBook().getId());
+            try {
+                ((ImageView) infoPanel.getChildren().get(1)).setImage(
+                        new Image(Files.newInputStream(ApplicationConfig.MAIN_PATH.resolve(bookAuthorView.getBook().getPath()).resolve("cover.png"))));
+            } catch (Exception e) {
+                showPopupErrorWithExceptionStack(e);
+            }
+        });
+
         return table;
     }
 
-    private HBox getTopBar(Stage stage) {
+    private HBox getTopBar() {
         HBox hbox = new HBox();
         hbox.setPadding(new Insets(15, 12, 15, 12));
         hbox.setSpacing(10);
@@ -148,7 +170,7 @@ public class JebmanGUI extends Application {
 
         btnAddBook.setOnAction((final ActionEvent e) -> {
             configureFileChooser(fileChooser);
-            File ebookFile = fileChooser.showOpenDialog(stage);
+            File ebookFile = fileChooser.showOpenDialog(this.stage);
             if (ebookFile != null) {
                 try {
                     mc.insertBook(Path.of(ebookFile.getPath()));
@@ -167,7 +189,6 @@ public class JebmanGUI extends Application {
 
         return hbox;
     }
-
     private static void configureFileChooser(final FileChooser fileChooser) {
         fileChooser.setTitle("Select Ebook to add to library");
         fileChooser.setInitialDirectory(
