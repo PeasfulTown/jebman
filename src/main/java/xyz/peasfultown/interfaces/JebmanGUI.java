@@ -100,12 +100,18 @@ public class JebmanGUI extends Application {
     }
 
     private VBox getBookInfoPanel() {
-        Label placeHolderText = new Label("Info goes here");
+        Label infoLabel = new Label("Info");
+        Label isbnLbl = new Label("ISBN: ");
+        Label titleLbl = new Label("Title: ");
+        Label publisherLbl = new Label("Publisher: ");
+        Label publishDateLbl = new Label("Publish Date: ");
+        Label authorLbl = new Label("Author(s): ");
+        Label tagsLbl = new Label("Tag(s): ");
         // TODO: use generated thumbnail if exists, use placeholder `nocover.png` thumbnail if not exist
         ImageView cover = new ImageView(new Image(getClass().getClassLoader().getResourceAsStream("nocover.png")));
         cover.setPreserveRatio(true);
         cover.setFitWidth(150);
-        this.infoPanel.getChildren().addAll(placeHolderText, cover);
+        this.infoPanel.getChildren().addAll(infoLabel, cover, isbnLbl, titleLbl, publisherLbl, publishDateLbl, authorLbl, tagsLbl);
         this.infoPanel.setPadding(new Insets(10, 10, 10, 10));
 
         return infoPanel;
@@ -145,13 +151,18 @@ public class JebmanGUI extends Application {
 
         table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorView, t1) -> {
             System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
-            ((Label) infoPanel.getChildren().get(0)).setText("test" + bookAuthorView.getBook().getId());
             try {
                 ((ImageView) infoPanel.getChildren().get(1)).setImage(
                         new Image(Files.newInputStream(ApplicationConfig.MAIN_PATH.resolve(bookAuthorView.getBook().getPath()).resolve("cover.png"))));
             } catch (Exception e) {
                 showPopupErrorWithExceptionStack(e);
             }
+            ((Label) infoPanel.getChildren().get(2)).setText("ISBN: " + bookAuthorView.getBook().getIsbn());
+            ((Label) infoPanel.getChildren().get(3)).setText("Title: " + bookAuthorView.getBook().getTitle());
+            ((Label) infoPanel.getChildren().get(4)).setText("Publisher: " + (bookAuthorView.getBook().getPublisher() != null ? bookAuthorView.getBook().getPublisher().getName() : "Unknown"));
+            ((Label) infoPanel.getChildren().get(5)).setText("Publish Date: " + bookAuthorView.getBook().getPublishDate().toString());
+            ((Label) infoPanel.getChildren().get(6)).setText("Author(s): " + bookAuthorView.getAuthor().getName());
+            ((Label) infoPanel.getChildren().get(7)).setText("Tag(s): " + "Place holder");
         });
 
         return table;
@@ -189,6 +200,7 @@ public class JebmanGUI extends Application {
 
         return hbox;
     }
+
     private static void configureFileChooser(final FileChooser fileChooser) {
         fileChooser.setTitle("Select Ebook to add to library");
         fileChooser.setInitialDirectory(
