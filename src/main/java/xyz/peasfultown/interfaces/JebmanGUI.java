@@ -159,7 +159,8 @@ public class JebmanGUI extends Application {
             }
             ((Label) infoPanel.getChildren().get(2)).setText("ISBN: " + bookAuthorView.getBook().getIsbn());
             ((Label) infoPanel.getChildren().get(3)).setText("Title: " + bookAuthorView.getBook().getTitle());
-            ((Label) infoPanel.getChildren().get(4)).setText("Publisher: " + (bookAuthorView.getBook().getPublisher() != null ? bookAuthorView.getBook().getPublisher().getName() : "Unknown"));
+            ((Label) infoPanel.getChildren().get(4)).setText("Publisher: " + (bookAuthorView.getBook().getPublisher() != null
+                    ? bookAuthorView.getBook().getPublisher().getName() : "Unknown"));
             ((Label) infoPanel.getChildren().get(5)).setText("Publish Date: " + bookAuthorView.getBook().getPublishDate().toString());
             ((Label) infoPanel.getChildren().get(6)).setText("Author(s): " + bookAuthorView.getAuthor().getName());
             ((Label) infoPanel.getChildren().get(7)).setText("Tag(s): " + "Place holder");
