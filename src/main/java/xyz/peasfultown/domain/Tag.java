@@ -3,7 +3,7 @@ package xyz.peasfultown.domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-public class Tag {
+public class Tag implements Record {
     private int id;
     private String name;
     public Tag(String name) {
