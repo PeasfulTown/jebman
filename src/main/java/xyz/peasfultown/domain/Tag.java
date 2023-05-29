@@ -6,6 +6,12 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 public class Tag implements Record {
     private int id;
     private String name;
+
+    public Tag() {
+        this.id = 0;
+        this.name = "";
+    }
+
     public Tag(String name) {
         this.id = 0;
         this.name = name;
@@ -17,7 +23,7 @@ public class Tag implements Record {
     }
 
     public int getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(int id) {
@@ -25,7 +31,7 @@ public class Tag implements Record {
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public void setName(String name) {

@@ -56,9 +56,10 @@ public class JDBCTagDAO extends JDBCAbstractDAO<Tag>{
     @Override
     protected void setStatementObject(PreparedStatement stmt, Tag object) throws DAOException {
         try {
-            stmt.setString(1, object.getName());
-            if (object.getId() != 0)
+            if (object.getId() > 0) {
                 stmt.setInt(2, object.getId());
+            }
+            stmt.setString(1, object.getName());
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
         }
@@ -66,10 +67,13 @@ public class JDBCTagDAO extends JDBCAbstractDAO<Tag>{
 
     @Override
     protected Tag getObjectFromResultSet(ResultSet rs) throws DAOException {
+        Tag tag = new Tag();
         try {
-            return new Tag(rs.getInt("id"), rs.getString("name"));
+            tag.setId(rs.getInt("id"));
+            tag.setName(rs.getString("name"));
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
         }
+        return tag;
     }
 }

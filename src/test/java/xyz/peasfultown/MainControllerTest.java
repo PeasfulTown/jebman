@@ -16,6 +16,7 @@ import xyz.peasfultown.domain.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -234,6 +235,56 @@ public class MainControllerTest {
             logger.error(e.getMessage(), e);
             fail();
         }
+    }
+
+    @Test
+    void addBookTagInsertsCorrectBookTagRecord() {
+        // TODO: finish
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+            Book book = ((SearchableRecordSet<Book>) mc.getBooks()).getById(2);
+            mc.tagBook(book.getId(), "testTag");
+            BookTag bt = mc.readAllBookTagLinks().iterator().next();
+
+            assertNotNull(bt);
+            assertEquals(2, bt.getBookId());
+            assertEquals(1, bt.getTagId());
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+    }
+
+    @Test
+    void queryBooksOfASpecificTagGetsCorrectResults() {
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+            Book book0 = ((SearchableRecordSet<Book>) mc.getBooks()).getById(3);
+            Book book1 = ((SearchableRecordSet<Book>) mc.getBooks()).getById(2);
+
+            mc.tagBook(book0.getId(), "classic");
+            mc.tagBook(book0.getId(), "tbr");
+            mc.tagBook(book0.getId(), "favs");
+
+            mc.tagBook(book1.getId(), "tbr");
+
+            Set<Book> queriedBooks = mc.getBooksByTag("tbr");
+
+            assertEquals(2, queriedBooks.size());
+            assertEquals(book0, queriedBooks.toArray()[0]);
+            assertEquals(book1, queriedBooks.toArray()[1]);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail();
+        }
+    }
+
+    @Test
+    void queryBookTags() {
+        logger.info("Check query books by tags.");
+
     }
 
     @Test

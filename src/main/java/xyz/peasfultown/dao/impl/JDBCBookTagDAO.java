@@ -1,12 +1,17 @@
 package xyz.peasfultown.dao.impl;
 
 import xyz.peasfultown.dao.DAOException;
+import xyz.peasfultown.dao.GenericJointTableDAO;
 import xyz.peasfultown.domain.BookTag;
+import xyz.peasfultown.helpers.ConnectionFactory;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> {
+public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> implements GenericJointTableDAO {
     @Override
     protected void assignObjectId(BookTag object, Integer id) {
         object.setId(id);
@@ -52,6 +57,10 @@ public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> {
         return "SELECT COUNT(id) FROM books_tags_link AS count;";
     }
 
+    protected String getReadMainObjectIdsBySecondaryIdQuery() {
+        return "SELECT * FROM books_tags_link WHERE tag_id=?;";
+    }
+
     @Override
     protected void setStatementObject(PreparedStatement stmt, BookTag object) throws DAOException {
         try {
@@ -74,6 +83,43 @@ public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> {
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
         }
-        return null;
+        return link;
+    }
+
+    public Set<Integer> readBookIdsByTagId(int tagId) throws DAOException {
+        String readQuery = getReadMainObjectIdsBySecondaryIdQuery();
+        Set<Integer> bookIds = new LinkedHashSet<>();
+
+        try (Connection con = ConnectionFactory.getConnection();
+            PreparedStatement stmt = con.prepareStatement(readQuery)) {
+            setStatementId(stmt, tagId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    bookIds.add(rs.getInt("book_id"));
+                }
+            }
+        } catch (Exception e) {
+            throw new DAOException(e.getMessage(), e);
+        }
+
+        return bookIds;
+    }
+
+    public Set<Integer> readIdsOfMainObject(int id, String colName) throws DAOException {
+        String readQuery = getReadMainObjectIdsBySecondaryIdQuery();
+
+        try (Connection con = ConnectionFactory.getConnection();
+             PreparedStatement stmt = con.prepareStatement(readQuery)) {
+            setStatementId(stmt, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                Set<Integer> mainObjIds = new LinkedHashSet<>();
+                while (rs.next()) {
+                    mainObjIds.add(rs.getInt(colName));
+                }
+                return mainObjIds;
+            }
+        } catch (Exception e) {
+            throw new DAOException(e.getMessage(), e);
+        }
     }
 }
