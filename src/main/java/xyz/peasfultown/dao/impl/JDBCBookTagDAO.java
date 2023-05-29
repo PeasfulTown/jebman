@@ -57,8 +57,12 @@ public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> implements GenericJ
         return "SELECT COUNT(id) FROM books_tags_link AS count;";
     }
 
-    protected String getReadMainObjectIdsBySecondaryIdQuery() {
+    protected String getReadBookIdsByTagIdQuery() {
         return "SELECT * FROM books_tags_link WHERE tag_id=?;";
+    }
+
+    protected String getReadTagIdsByBookIdQuery() {
+        return "SELECT * FROM books_tags_link WHERE book_id=?;";
     }
 
     @Override
@@ -87,39 +91,46 @@ public class JDBCBookTagDAO extends JDBCAbstractDAO<BookTag> implements GenericJ
     }
 
     public Set<Integer> readBookIdsByTagId(int tagId) throws DAOException {
-        String readQuery = getReadMainObjectIdsBySecondaryIdQuery();
-        Set<Integer> bookIds = new LinkedHashSet<>();
-
-        try (Connection con = ConnectionFactory.getConnection();
-            PreparedStatement stmt = con.prepareStatement(readQuery)) {
-            setStatementId(stmt, tagId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    bookIds.add(rs.getInt("book_id"));
-                }
-            }
-        } catch (Exception e) {
-            throw new DAOException(e.getMessage(), e);
-        }
-
-        return bookIds;
-    }
-
-    public Set<Integer> readIdsOfMainObject(int id, String colName) throws DAOException {
-        String readQuery = getReadMainObjectIdsBySecondaryIdQuery();
+        String readQuery = getReadBookIdsByTagIdQuery();
 
         try (Connection con = ConnectionFactory.getConnection();
              PreparedStatement stmt = con.prepareStatement(readQuery)) {
-            setStatementId(stmt, id);
+            setStatementId(stmt, tagId);
             try (ResultSet rs = stmt.executeQuery()) {
                 Set<Integer> mainObjIds = new LinkedHashSet<>();
                 while (rs.next()) {
-                    mainObjIds.add(rs.getInt(colName));
+                    mainObjIds.add(rs.getInt("book_id"));
                 }
                 return mainObjIds;
             }
         } catch (Exception e) {
             throw new DAOException(e.getMessage(), e);
         }
+    }
+
+    public Set<Integer> readTagIdsByBookId(int bookId) throws DAOException {
+        String readQuery = getReadTagIdsByBookIdQuery();
+
+        try (Connection con = ConnectionFactory.getConnection();
+            PreparedStatement stmt = con.prepareStatement(readQuery)) {
+            stmt.setInt(1, bookId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                Set<Integer> ids = new LinkedHashSet<>();
+                while (rs.next()) {
+                    ids.add(rs.getInt("tag_id"));
+                }
+                return ids;
+            }
+        } catch (Exception e) {
+            throw new DAOException(e.getMessage(), e);
+        }
+    }
+
+    public Set<Integer> readFirstColIdsBySecondColIds(int id) throws DAOException {
+        return readBookIdsByTagId(id);
+    }
+
+    public Set<Integer> readSecondColIdsByFirstColIds(int id) throws DAOException {
+        return readTagIdsByBookId(id);
     }
 }

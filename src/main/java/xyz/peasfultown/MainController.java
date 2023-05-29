@@ -24,10 +24,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * TODO: upon instantialization, check program's main path for the SQLite database file (metadata.db) and load it.
@@ -391,8 +388,7 @@ public class MainController {
     }
 
     public Set<Integer> readBookIdsByTagId(int id) throws DAOException {
-        Set<Integer> bookIds = ((GenericJointTableDAO)this.bookTagDAO).readIdsOfMainObject(id, "book_id");
-        return bookIds;
+        return ((GenericJointTableDAO)this.bookTagDAO).readFirstColIdsBySecondColIds(id);
     }
 
     public Set<Book> getBooksByTag(Tag tag) throws DAOException {
@@ -414,6 +410,19 @@ public class MainController {
             books.add(this.bookSet.getById(id));
         }
         return books;
+    }
+
+    public Set<Tag> getTagsOfBook(Book book) throws DAOException {
+        return getTagsOfBook(book.getId());
+    }
+
+    public Set<Tag> getTagsOfBook(int bookId) throws DAOException {
+        Set<Integer> tagIds = ((GenericJointTableDAO) this.bookTagDAO).readSecondColIdsByFirstColIds(bookId);
+        Set<Tag> tags = new LinkedHashSet<>();
+        for (int id : tagIds) {
+            tags.add(getTagById(id));
+        }
+        return tags;
     }
 
     public Set<Series> getSeries() {

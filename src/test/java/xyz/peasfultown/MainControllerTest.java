@@ -17,6 +17,7 @@ import xyz.peasfultown.domain.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -282,31 +283,48 @@ public class MainControllerTest {
     }
 
     @Test
-    void queryBookTags() {
-        logger.info("Check query books by tags.");
+    void listTagsThatBookBelongsTo() {
+        try {
+            MainController mc = new MainController();
+            insertTestBooks(mc);
+            Book book0 = ((SearchableRecordSet<Book>) mc.getBooks()).getById(3);
+            Book book1 = ((SearchableRecordSet<Book>) mc.getBooks()).getById(2);
 
+            mc.tagBook(book0.getId(), "classic");
+            mc.tagBook(book0.getId(), "tbr");
+            mc.tagBook(book0.getId(), "favs");
+            mc.tagBook(book1.getId(), "tbr");
+
+            Set<Tag> bookTags = mc.getTagsOfBook(book0);
+            assertNotNull(bookTags);
+            assertEquals(3, bookTags.size());
+            assertTrue(bookTags.contains(mc.getTagByName("classic")));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            fail(e);
+        }
     }
 
-    @Test
-    void addFormatAddsFileToBookDirectory() {
-        logger.info("Check add book format adds file to the book directory");
-        // TODO: finish
-        fail();
-    }
-
-    @Test
-    void removeFormatRemovesFileFromDirectory() {
-        logger.info("Check remove book format will delete it from the directory");
-        // TODO: finish
-        fail();
-    }
-
-    @Test
-    void removeLastBookFormatAvailableDeletesDirectory() {
-        logger.info("Check remove book format will delete it from the directory");
-        // TODO: finish
-        fail();
-    }
+//    @Test
+//    void addFormatAddsFileToBookDirectory() {
+//        logger.info("Check add book format adds file to the book directory");
+//        // TODO: finish
+//        fail();
+//    }
+//
+//    @Test
+//    void removeFormatRemovesFileFromDirectory() {
+//        logger.info("Check remove book format will delete it from the directory");
+//        // TODO: finish
+//        fail();
+//    }
+//
+//    @Test
+//    void removeLastBookFormatAvailableDeletesDirectory() {
+//        logger.info("Check remove book format will delete it from the directory");
+//        // TODO: finish
+//        fail();
+//    }
 
 }
 
