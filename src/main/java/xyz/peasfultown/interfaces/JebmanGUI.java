@@ -25,18 +25,13 @@ import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
-import xyz.peasfultown.domain.Author;
-import xyz.peasfultown.domain.Book;
-import xyz.peasfultown.domain.Publisher;
-import xyz.peasfultown.domain.Series;
+import xyz.peasfultown.domain.*;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
+import java.util.*;
 
 import static xyz.peasfultown.interfaces.GUIHelpers.*;
 
@@ -101,14 +96,27 @@ public class JebmanGUI extends Application {
 
     private VBox getBookInfoPanel() {
         Label infoLabel = new Label("Info");
+        infoLabel.setWrapText(true);
+
         Label isbnLbl = new Label("ISBN: ");
+        isbnLbl.setWrapText(true);
+
         Label titleLbl = new Label("Title: ");
+        titleLbl.setWrapText(true);
+
         Label publisherLbl = new Label("Publisher: ");
+        publisherLbl.setWrapText(true);
+
         Label publishDateLbl = new Label("Publish Date: ");
+        publishDateLbl.setWrapText(true);
+
         Label authorLbl = new Label("Author(s): ");
+        authorLbl.setWrapText(true);
+
         Label tagsLbl = new Label("Tag(s): ");
-        // TODO: use generated thumbnail if exists, use placeholder `nocover.png` thumbnail if not exist
-        ImageView cover = new ImageView(new Image(getClass().getClassLoader().getResourceAsStream("nocover.png")));
+        tagsLbl.setWrapText(true);
+
+        ImageView cover = new ImageView(new Image(Objects.requireNonNull(JebmanGUI.class.getClassLoader().getResourceAsStream("nocover.png"))));
         cover.setPreserveRatio(true);
         cover.setFitWidth(150);
         this.infoPanel.getChildren().addAll(infoLabel, cover, isbnLbl, titleLbl, publisherLbl, publishDateLbl, authorLbl, tagsLbl);
@@ -149,21 +157,26 @@ public class JebmanGUI extends Application {
         data.addAll(collectBookAuthorViewItems());
         table.setItems(data);
 
-        table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorView, t1) -> {
+        table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
             System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
             try {
                 ((ImageView) infoPanel.getChildren().get(1)).setImage(
-                        new Image(Files.newInputStream(ApplicationConfig.MAIN_PATH.resolve(bookAuthorView.getBook().getPath()).resolve("cover.png"))));
+                        new Image(Files.newInputStream(ApplicationConfig.MAIN_PATH.resolve(observableValue.getValue().getBook().getPath()).resolve("cover.png"))));
             } catch (Exception e) {
                 showPopupErrorWithExceptionStack(e);
             }
-            ((Label) infoPanel.getChildren().get(2)).setText("ISBN: " + bookAuthorView.getBook().getIsbn());
-            ((Label) infoPanel.getChildren().get(3)).setText("Title: " + bookAuthorView.getBook().getTitle());
-            ((Label) infoPanel.getChildren().get(4)).setText("Publisher: " + (bookAuthorView.getBook().getPublisher() != null
-                    ? bookAuthorView.getBook().getPublisher().getName() : "Unknown"));
-            ((Label) infoPanel.getChildren().get(5)).setText("Publish Date: " + bookAuthorView.getBook().getPublishDate().toString());
-            ((Label) infoPanel.getChildren().get(6)).setText("Author(s): " + bookAuthorView.getAuthor().getName());
-            ((Label) infoPanel.getChildren().get(7)).setText("Tag(s): " + "Place holder");
+            ((Label) infoPanel.getChildren().get(2)).setText("ISBN: " + observableValue.getValue().getBook().getIsbn());
+            ((Label) infoPanel.getChildren().get(3)).setText("Title: " + observableValue.getValue().getBook().getTitle());
+            ((Label) infoPanel.getChildren().get(4)).setText("Publisher: " + (observableValue.getValue().getBook().getPublisher() != null
+                    ? observableValue.getValue().getBook().getPublisher().getName() : "Unknown"));
+            ((Label) infoPanel.getChildren().get(5)).setText("Publish Date: " + observableValue.getValue().getBook().getPublishDate().toString());
+            ((Label) infoPanel.getChildren().get(6)).setText("Author(s): " + observableValue.getValue().getAuthor().getName());
+            StringJoiner tagsJoiner = new StringJoiner(", ");
+            for (Tag t : observableValue.getValue().getTags()) {
+                tagsJoiner.add(t.getName());
+            }
+            // TODO: join all tags and display in comma delimited format, also add hyperlink to those tags (use TextFlow)
+            ((Label) infoPanel.getChildren().get(7)).setText("Tag(s): " + tagsJoiner);
         });
 
         return table;
@@ -224,7 +237,13 @@ public class JebmanGUI extends Application {
 
     private BookAuthorView createBookAuthorView(Book book) {
         Author author = mc.getBookAuthorByBookId(book.getId());
-        return new BookAuthorView(book, author);
+        try {
+            List<Tag> tags = new ArrayList<>(mc.getTagsOfBook(book));
+            return new BookAuthorView(book, author, tags);
+        } catch (DAOException e) {
+            showPopupErrorWithExceptionStack(e);
+        }
+        return null;
     }
 
     private TableColumn<BookAuthorView, Integer> getBookIdColumn() {
