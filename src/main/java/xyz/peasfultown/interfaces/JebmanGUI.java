@@ -230,7 +230,7 @@ public class JebmanGUI extends Application {
                 for (Tag t : observableValue.getValue().getTags()) {
                     tagsJoiner.add(t.getName());
                 }
-                // TODO: join all tags and display in comma delimited format, also add hyperlink to those tags (use TextFlow)
+                // TODO: make each tags clickable
                 ((Label) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).setText(tagsJoiner.toString());
             }
         });
