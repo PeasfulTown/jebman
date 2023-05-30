@@ -8,6 +8,7 @@ package xyz.peasfultown;
 
 import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.GenericDAO;
+import xyz.peasfultown.dao.GenericJointTableDAO;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.dao.impl.*;
 import xyz.peasfultown.domain.*;
@@ -23,9 +24,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * TODO: upon instantialization, check program's main path for the SQLite database file (metadata.db) and load it.
@@ -36,12 +35,16 @@ public class MainController {
     private SearchableRecordSet<Series> seriesSet;
     private SearchableRecordSet<Publisher> publisherSet;
     private SearchableRecordSet<Author> authorSet;
+    private SearchableRecordSet<Tag> tagSet;
     private SearchableRecordSet<BookAuthor> bookAuthorLinkSet;
+    private SearchableRecordSet<BookTag> bookTagLinkSet;
     private GenericDAO<Book> bookDAO;
     private GenericDAO<Series> seriesDAO;
     private GenericDAO<Publisher> publisherDAO;
     private GenericDAO<Author> authorDAO;
+    private GenericDAO<Tag> tagDAO;
     private GenericDAO<BookAuthor> bookAuthorDAO;
+    private GenericDAO<BookTag> bookTagDAO;
 
     /**
      * Default constructor creates a directory for the program at the user's `Documents` directory.
@@ -78,12 +81,16 @@ public class MainController {
             this.publisherDAO = new JDBCPublisherDAO();
             this.seriesDAO = new JDBCSeriesDAO();
             this.authorDAO = new JDBCAuthorDAO();
+            this.tagDAO = new JDBCTagDAO();
             this.bookAuthorDAO = new JDBCBookAuthorDAO();
+            this.bookTagDAO = new JDBCBookTagDAO();
 
             this.seriesSet = (SearchableRecordSet<Series>) this.readAllSeries();
             this.publisherSet = (SearchableRecordSet<Publisher>) this.readAllPublishers();
             this.authorSet = (SearchableRecordSet<Author>) this.readAllAuthors();
+            this.tagSet = (SearchableRecordSet<Tag>) this.readAllTags();
             this.bookAuthorLinkSet = (SearchableRecordSet<BookAuthor>) this.readAllBookAuthorLinks();
+            this.bookTagLinkSet = (SearchableRecordSet<BookTag>) this.readAllBookTagLinks();
 
             this.bookDAO = new JDBCBookDAO(seriesSet, publisherSet);
             this.bookSet = (SearchableRecordSet<Book>) this.readAllBooks();
@@ -110,6 +117,11 @@ public class MainController {
     public void insertAuthor(Author author) throws DAOException {
         this.authorDAO.create(author);
         this.authorSet.add(author);
+    }
+
+    public void insertTag(Tag tag) throws DAOException {
+        this.tagDAO.create(tag);
+        this.tagSet.add(tag);
     }
 
     /**
@@ -164,6 +176,28 @@ public class MainController {
         bookSet.remove(book);
     }
 
+    public void tagBook(int bookId, int tagId) throws DAOException {
+        Tag tag = this.getTagById(tagId);
+
+        if (tag == null)
+            throw new DAOException("No tag record with matching ID.");
+
+        this.addBookTagLink(bookId, tag.getId());
+    }
+
+    public void tagBook(int bookId, String tagName) throws DAOException {
+        Tag tag = this.getTagByName(tagName);
+
+        if (tag == null) {
+            tag = new Tag();
+            tag.setName(tagName);
+            this.insertTag(tag);
+        }
+
+        tag = this.getTagByName(tagName);
+        this.addBookTagLink(bookId, tag.getId());
+    }
+
     public Set<Publisher> readAllPublishers() throws DAOException {
         return publisherDAO.readAll();
     }
@@ -200,8 +234,24 @@ public class MainController {
         return authorDAO.read(name);
     }
 
+    public Set<Tag> readAllTags() throws DAOException {
+        return tagDAO.readAll();
+    }
+
+    public Tag readTagById(int id) throws DAOException {
+        return tagDAO.read(id);
+    }
+
+    public Tag readTagByName(String name) throws DAOException {
+        return tagDAO.read(name);
+    }
+
     public Set<BookAuthor> readAllBookAuthorLinks() throws DAOException {
         return bookAuthorDAO.readAll();
+    }
+
+    public Set<BookTag> readAllBookTagLinks() throws DAOException {
+        return bookTagDAO.readAll();
     }
 
     public Set<Book> readAllBooks() throws DAOException {
@@ -213,7 +263,6 @@ public class MainController {
             if (ba.getBookId() == id)
                 return this.authorSet.getById(ba.getAuthorId());
         }
-        System.out.println("Cannot find Author");
         return null;
     }
 
@@ -283,6 +332,12 @@ public class MainController {
         this.bookAuthorLinkSet.add(ba);
     }
 
+    private void addBookTagLink(int bookId, int tagId) throws DAOException {
+        BookTag bt = new BookTag(bookId, tagId);
+        this.bookTagDAO.create(bt);
+        this.bookTagLinkSet.add(bt);
+    }
+
     private Author createAuthorFromName(String name) throws DAOException {
         Author author = authorSet.getByName(name);
         if (author == null) {
@@ -332,6 +387,44 @@ public class MainController {
         return this.bookSet.getByName(title);
     }
 
+    public Set<Integer> readBookIdsByTagId(int id) throws DAOException {
+        return ((GenericJointTableDAO)this.bookTagDAO).readFirstColIdsBySecondColIds(id);
+    }
+
+    public Set<Book> getBooksByTag(Tag tag) throws DAOException {
+        return getBooksByTag(tag.getId());
+    }
+
+    public Set<Book> getBooksByTag(String tagName) throws DAOException {
+        Tag tag = this.tagSet.getByName(tagName);
+        if (tag == null)
+            this.insertTag(tag);
+
+        return getBooksByTag(tag.getId());
+    }
+
+    public Set<Book> getBooksByTag(int tagId) throws DAOException {
+        Set<Integer> ids = this.readBookIdsByTagId(tagId);
+        Set<Book> books = new HashSet<>();
+        for (int id : ids) {
+            books.add(this.bookSet.getById(id));
+        }
+        return books;
+    }
+
+    public Set<Tag> getTagsOfBook(Book book) throws DAOException {
+        return getTagsOfBook(book.getId());
+    }
+
+    public Set<Tag> getTagsOfBook(int bookId) throws DAOException {
+        Set<Integer> tagIds = ((GenericJointTableDAO) this.bookTagDAO).readSecondColIdsByFirstColIds(bookId);
+        Set<Tag> tags = new LinkedHashSet<>();
+        for (int id : tagIds) {
+            tags.add(getTagById(id));
+        }
+        return tags;
+    }
+
     public Set<Series> getSeries() {
         return this.seriesSet;
     }
@@ -352,8 +445,20 @@ public class MainController {
         return this.authorSet.getByName(name);
     }
 
+    public Tag getTagById(int id) {
+        return this.tagSet.stream().filter(t -> t.getId() == id).findFirst().get();
+    }
+
+    public Tag getTagByName(String name) {
+        return this.tagSet.getByName(name);
+    }
+
     public Set<BookAuthor> getBookAuthorLinks() {
         return this.bookAuthorLinkSet;
+    }
+
+    public Set<BookTag> getBookTagLinks() {
+        return this.bookTagLinkSet;
     }
 
     public Book getLastInsertedBook() {

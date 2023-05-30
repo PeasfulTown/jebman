@@ -26,6 +26,11 @@ class JebmanGUITest {
         try {
             mc = new MainController();
             insertTestBooks(mc);
+            mc.tagBook(1, "something");
+            mc.tagBook(1, "else");
+            mc.tagBook(1, "tbr");
+            mc.tagBook(2, "read");
+            mc.tagBook(2, "science");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();
