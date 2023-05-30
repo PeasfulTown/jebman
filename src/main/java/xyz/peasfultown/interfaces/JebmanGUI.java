@@ -9,14 +9,22 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -29,12 +37,14 @@ import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.domain.*;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 
 import static xyz.peasfultown.interfaces.GUIHelpers.*;
 
@@ -60,15 +70,8 @@ public class JebmanGUI extends Application {
         stage.setMinHeight(300);
         stage.setMinWidth(600);
 
-        AnchorPane anchor = new AnchorPane();
         GridPane layout = getLayout();
-        anchor.getChildren().addAll(layout);
-        AnchorPane.setTopAnchor(layout, 10.0);
-        AnchorPane.setBottomAnchor(layout, 10.0);
-        AnchorPane.setLeftAnchor(layout, 10.0);
-        AnchorPane.setRightAnchor(layout, 10.0);
-
-        Scene scene = new Scene(anchor);
+        Scene scene = new Scene(layout);
         stage.setScene(scene);
         stage.show();
     }
@@ -107,53 +110,52 @@ public class JebmanGUI extends Application {
         cover.setPreserveRatio(true);
         cover.setFitWidth(300);
 
-        Label isbnLbl           = new Label("ISBN:");
+        Label isbnLbl = new Label("ISBN:");
         GridPane.setHalignment(isbnLbl, HPos.LEFT);
         GridPane.setValignment(isbnLbl, VPos.TOP);
         isbnLbl.setFont(font);
-        Label isbnTxt           = new Label();
+        Label isbnTxt = new Label();
         isbnTxt.setFont(font);
         isbnTxt.setWrapText(true);
 
-        Label titleLbl          = new Label("Title:");
+        Label titleLbl = new Label("Title:");
         GridPane.setHalignment(titleLbl, HPos.LEFT);
         GridPane.setValignment(titleLbl, VPos.TOP);
         titleLbl.setFont(font);
-        Label titleTxt          = new Label();
+        Label titleTxt = new Label();
         titleTxt.setWrapText(true);
         titleTxt.setFont(font);
 
-        Label publisherLbl      = new Label("Publisher:");
+        Label publisherLbl = new Label("Publisher:");
         GridPane.setHalignment(publisherLbl, HPos.LEFT);
         GridPane.setValignment(publisherLbl, VPos.TOP);
         publisherLbl.setFont(font);
-        Label publisherTxt      = new Label();
+        Label publisherTxt = new Label();
         publisherTxt.setWrapText(true);
         publisherTxt.setFont(font);
 
-        Label publishDateLbl    = new Label("Publish Date:");
+        Label publishDateLbl = new Label("Publish Date:");
         GridPane.setHalignment(publishDateLbl, HPos.LEFT);
         GridPane.setValignment(publishDateLbl, VPos.TOP);
         publishDateLbl.setFont(font);
-        Label publishDateTxt    = new Label();
+        Label publishDateTxt = new Label();
         publishDateTxt.setWrapText(true);
         publishDateTxt.setFont(font);
 
-        Label authorLbl         = new Label("Author(s):");
+        Label authorLbl = new Label("Author(s):");
         GridPane.setHalignment(authorLbl, HPos.LEFT);
         GridPane.setValignment(authorLbl, VPos.TOP);
         authorLbl.setFont(font);
-        Label authorTxt         = new Label();
+        Label authorTxt = new Label();
         authorTxt.setWrapText(true);
         authorTxt.setFont(font);
 
-        Label tagsLbl           = new Label("Tag(s):");
+        Label tagsLbl = new Label("Tag(s):");
         GridPane.setHalignment(tagsLbl, HPos.LEFT);
         GridPane.setValignment(tagsLbl, VPos.TOP);
         tagsLbl.setFont(font);
-        Label tagsTxt           = new Label();
-        tagsTxt.setWrapText(true);
-        tagsTxt.setFont(font);
+
+        FlowPane tagsFlowPane = new FlowPane();
 
         ColumnConstraints col1 = new ColumnConstraints();
         ColumnConstraints col2 = new ColumnConstraints();
@@ -161,13 +163,19 @@ public class JebmanGUI extends Application {
         col2.setHgrow(Priority.ALWAYS);
         infoPanel.getColumnConstraints().addAll(col1, col2);
 
-        infoPanel.add(cover,            0, 0, 2, 1);
-        infoPanel.add(isbnLbl,          0, 1);  infoPanel.add(isbnTxt,          1, 1);
-        infoPanel.add(titleLbl,         0, 2);  infoPanel.add(titleTxt,         1, 2);
-        infoPanel.add(publisherLbl,     0, 3);  infoPanel.add(publisherTxt,     1, 3);
-        infoPanel.add(publishDateLbl,   0, 4);  infoPanel.add(publishDateTxt,   1, 4);
-        infoPanel.add(authorLbl,        0, 5);  infoPanel.add(authorTxt,        1, 5);
-        infoPanel.add(tagsLbl,          0, 6);  infoPanel.add(tagsTxt,          1, 6);
+        infoPanel.add(cover, 0, 0, 2, 1);
+        infoPanel.add(isbnLbl, 0, 1);
+        infoPanel.add(isbnTxt, 1, 1);
+        infoPanel.add(titleLbl, 0, 2);
+        infoPanel.add(titleTxt, 1, 2);
+        infoPanel.add(publisherLbl, 0, 3);
+        infoPanel.add(publisherTxt, 1, 3);
+        infoPanel.add(publishDateLbl, 0, 4);
+        infoPanel.add(publishDateTxt, 1, 4);
+        infoPanel.add(authorLbl, 0, 5);
+        infoPanel.add(authorTxt, 1, 5);
+        infoPanel.add(tagsLbl, 0, 6);
+        infoPanel.add(tagsFlowPane, 1, 6);
 
         infoPanel.setPadding(new Insets(5));
         infoPanel.setGridLinesVisible(true);
@@ -209,11 +217,15 @@ public class JebmanGUI extends Application {
 
         data.addAll(collectBookAuthorViewItems());
         table.setItems(data);
+        table.getFocusModel().focus(1);
 
         table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
 //            System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
 //            System.out.println("observable value null: " + (observableValue.getValue() == null));
+//            System.out.println("bookAuthorViewNew is null: " + ((bookAuthorViewNew) == null));
             boolean observableValueIsNull = observableValue.getValue() == null;
+//            boolean observableValueIsNull = false;
+
             Image cover = !observableValueIsNull
                     ? new Image(ApplicationConfig.MAIN_PATH.resolve(observableValue.getValue().getBook().getPath()).resolve("cover.png").toUri().toString())
                     : new Image(Objects.requireNonNull(JebmanGUI.class.getClassLoader().getResourceAsStream("nocover.png")));
@@ -226,12 +238,54 @@ public class JebmanGUI extends Application {
                         ? observableValue.getValue().getBook().getPublisher().getName() : "Unknown"));
                 ((Label) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 4))).setText(observableValue.getValue().getBook().getPublishDate().toString());
                 ((Label) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 5))).setText(observableValue.getValue().getAuthor().getName());
-                StringJoiner tagsJoiner = new StringJoiner(", ");
-                for (Tag t : observableValue.getValue().getTags()) {
-                    tagsJoiner.add(t.getName());
+//                StringJoiner tagsJoiner = new StringJoiner(", ");
+//                for (Tag t : observableValue.getValue().getTags()) {
+//                    tagsJoiner.add(t.getName());
+//                }
+//                // TODO: make each tags clickable
+//                ((Label) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).setText(tagsJoiner.toString());
+                ((FlowPane) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).getChildren().clear();
+                List<Tag> tagList = observableValue.getValue().getTags();
+                if (tagList.size() > 0) {
+                    for (int i = 0; i < tagList.size(); i++) {
+                        Label lbl = new Label(tagList.get(i).getName());
+                        EventHandler<MouseEvent> hoverHandler = new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent mouseEvent) {
+                                // TODO: FINISH
+                                System.out.println("Mouse entered tag: " + lbl.getText());
+                                lbl.setTextFill(Color.web("#5fccff"));
+                                stage.getScene().setCursor(Cursor.CLOSED_HAND);
+                            }
+                        };
+
+                        EventHandler<MouseEvent> exitHandler = new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent mouseEvent) {
+                                lbl.setTextFill(Color.web("#4daaff"));
+                                stage.getScene().setCursor(Cursor.DEFAULT);
+                            }
+                        };
+
+                        EventHandler<MouseEvent> clickHandler = new EventHandler<MouseEvent>() {
+                            @Override
+                            public void handle(MouseEvent mouseEvent) {
+                                if (mouseEvent.getButton().name().equals("PRIMARY")) {
+                                    System.out.println("Clicked on label: " + lbl.getText());
+                                }
+                            }
+                        };
+
+                        lbl.setFont(font);
+                        lbl.setOnMouseEntered(hoverHandler);
+                        lbl.setOnMouseExited(exitHandler);
+                        lbl.setTextFill(Color.web("#4daaff"));
+                        lbl.setOnMouseClicked(clickHandler);
+                        ((FlowPane) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).getChildren().add(lbl);
+                        if (i != (tagList.size() - 1))
+                            ((FlowPane) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).getChildren().add(new Text(", "));
+                    }
                 }
-                // TODO: make each tags clickable
-                ((Label) Objects.requireNonNull(this.getTableNodeByColAndRow(infoPanel, 1, 6))).setText(tagsJoiner.toString());
             }
         });
 
@@ -334,7 +388,6 @@ public class JebmanGUI extends Application {
                         } else {
                             BookAuthorView bav = event.getRowValue();
                             bav.getBook().setTitle(event.getOldValue());
-                            event.getTableView().getFocusModel().focus(event.getTablePosition().getRow());
                             event.getTableView().getItems().set(event.getTablePosition().getRow(), bav);
                             showPopupError("Error", "A book with that title already exists in the database.");
                         }
