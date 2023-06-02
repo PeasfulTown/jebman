@@ -4,12 +4,9 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableDoubleValue;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.*;
 import javafx.geometry.Insets;
@@ -27,7 +24,6 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -37,10 +33,7 @@ import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.dao.RecordAlreadyExistsException;
 import xyz.peasfultown.domain.*;
 
-import java.awt.*;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -76,7 +69,7 @@ public class JebmanGUI extends Application {
         stage.show();
     }
 
-    private GridPane getLayout() {
+    private GridPane getLayout() throws DAOException {
         mainGrid.setHgap(10);
         mainGrid.setVgap(10);
         mainGrid.setPadding(new Insets(10, 10, 10, 10));
@@ -186,7 +179,7 @@ public class JebmanGUI extends Application {
         return infoPanel;
     }
 
-    private TableView<BookAuthorView> getBookTable() {
+    private TableView<BookAuthorView> getBookTable() throws DAOException {
         TableView<BookAuthorView> table = new TableView<>();
         table.setEditable(true);
 
@@ -215,7 +208,8 @@ public class JebmanGUI extends Application {
                         seriesIdCol, seriesNameCol, seriesNumberCol,
                         datePublishedCol, dateAddedCol, dateModifiedCol, pathCol)));
 
-        data.addAll(collectBookAuthorViewItems());
+
+        setData(mc.readAllBooks());
         table.setItems(data);
         table.getFocusModel().focus(1);
 
@@ -272,6 +266,11 @@ public class JebmanGUI extends Application {
                             public void handle(MouseEvent mouseEvent) {
                                 if (mouseEvent.getButton().name().equals("PRIMARY")) {
                                     System.out.println("Clicked on label: " + lbl.getText());
+                                    try {
+                                        setData(mc.getBooksByTag(lbl.getText()));
+                                    } catch (DAOException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                             }
                         };
@@ -318,7 +317,7 @@ public class JebmanGUI extends Application {
             if (ebookFile != null) {
                 try {
                     mc.insertBook(Path.of(ebookFile.getPath()));
-                    this.data.add(createBookAuthorView(mc.getLastInsertedBook()));
+                    addData(mc.getLastInsertedBook());
                     showPopupInfo("Info", ebookFile.getName() + " added to library!");
                 } catch (RecordAlreadyExistsException ex) {
                     showPopupError(ex, "Jebman - Error", "Ebook already exists in Jebman library.");
@@ -344,10 +343,9 @@ public class JebmanGUI extends Application {
         );
     }
 
-    private ObservableList<BookAuthorView> collectBookAuthorViewItems() {
-        Set<Book> booksInDatabase = mc.getBooks();
+    private ObservableList<BookAuthorView> collectBookAuthorViewItems(Set<Book> books) {
         ObservableList<BookAuthorView> bookAuthorViewItems = FXCollections.observableList(new ArrayList<>());
-        for (Book b : booksInDatabase) {
+        for (Book b : books) {
             BookAuthorView bookAuthorView = createBookAuthorView(b);
             bookAuthorViewItems.add(bookAuthorView);
         }
@@ -569,5 +567,22 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
         return pathCol;
+    }
+
+    private void setData(ObservableList<BookAuthorView> bavs) {
+        this.data.clear();
+        this.data.addAll(bavs);
+    }
+
+    private void setData(Set<Book> books) {
+        setData(collectBookAuthorViewItems(books));
+    }
+
+    private void addData(BookAuthorView bav) {
+        this.data.add(bav);
+    }
+
+    private void addData(Book book) {
+        addData(createBookAuthorView(book));
     }
 }
