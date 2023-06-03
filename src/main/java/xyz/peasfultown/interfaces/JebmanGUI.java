@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -69,7 +70,7 @@ public class JebmanGUI extends Application {
         stage.show();
     }
 
-    private GridPane getLayout() throws DAOException {
+    private GridPane getLayout() {
         mainGrid.setHgap(10);
         mainGrid.setVgap(10);
         mainGrid.setPadding(new Insets(10, 10, 10, 10));
@@ -90,11 +91,11 @@ public class JebmanGUI extends Application {
         row3.setVgrow(Priority.ALWAYS);
         mainGrid.getRowConstraints().addAll(row1, row2, row3);
 
-        mainGrid.add(getTopBar(), 0, 0, 2, 1);
+        mainGrid.add(getTopBar(), 0, 0, 3, 1);
         mainGrid.add(getTableResetButton(), 1, 1);
         mainGrid.add(getBookInfoPanel(), 0, 2);
         mainGrid.add(getBookTable(), 1, 2);
-
+        mainGrid.add(getTagList(), 2, 2);
         return mainGrid;
     }
 
@@ -107,6 +108,33 @@ public class JebmanGUI extends Application {
             setDataAll();
         });
         return resetBtn;
+    }
+
+    private ListView<String> getTagList() {
+        Set<Tag> tags = null;
+        try {
+            tags = mc.readAllTags();
+        } catch (Exception e) {
+            showPopupErrorWithExceptionStack(e);
+        }
+
+        ObservableList<String> tagObservables = FXCollections.observableList(new ArrayList<>());
+        for (Tag t : tags) {
+            tagObservables.add(t.getName());
+        }
+
+        ListView<String> tagList = new ListView<>();
+        tagList.setItems(tagObservables);
+        tagList.getSelectionModel().selectedItemProperty().addListener(
+                (ObservableValue<? extends String> ov, String old_val, String new_val) -> {
+                    try {
+                        setData(mc.getBooksByTag(ov.getValue()));
+                    } catch (DAOException e) {
+                        showPopupErrorWithExceptionStack(e);
+                    }
+                }
+        );
+        return tagList;
     }
 
     private GridPane getBookInfoPanel() {
@@ -194,7 +222,7 @@ public class JebmanGUI extends Application {
         return infoPanel;
     }
 
-    private TableView<BookAuthorView> getBookTable() throws DAOException {
+    private TableView<BookAuthorView> getBookTable() {
         TableView<BookAuthorView> table = new TableView<>();
         table.setEditable(true);
 
