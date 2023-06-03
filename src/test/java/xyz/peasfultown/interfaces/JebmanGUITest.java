@@ -31,6 +31,9 @@ class JebmanGUITest {
             mc.tagBook(1, "tbr");
             mc.tagBook(2, "read");
             mc.tagBook(2, "science");
+            mc.tagBook(3, "tbr");
+            mc.tagBook(3, "something");
+            mc.tagBook(4, "read");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();

@@ -84,24 +84,39 @@ public class JebmanGUI extends Application {
 
         RowConstraints row1 = new RowConstraints();
         RowConstraints row2 = new RowConstraints();
+        RowConstraints row3 = new RowConstraints();
         row1.setPrefHeight(100);
-        row2.setVgrow(Priority.ALWAYS);
-        mainGrid.getRowConstraints().addAll(row1, row2);
+        row2.setPrefHeight(30);
+        row3.setVgrow(Priority.ALWAYS);
+        mainGrid.getRowConstraints().addAll(row1, row2, row3);
 
         mainGrid.add(getTopBar(), 0, 0, 2, 1);
-        mainGrid.add(getBookInfoPanel(), 0, 1);
-        mainGrid.add(getBookTable(), 1, 1);
+        mainGrid.add(getTableResetButton(), 1, 1);
+        mainGrid.add(getBookInfoPanel(), 0, 2);
+        mainGrid.add(getBookTable(), 1, 2);
 
         return mainGrid;
+    }
+
+    private Button getTableResetButton() {
+        Button resetBtn = new Button("Reset");
+        GridPane.setValignment(resetBtn, VPos.CENTER);
+        GridPane.setHalignment(resetBtn, HPos.RIGHT);
+
+        resetBtn.setOnAction(e -> {
+            setDataAll();
+        });
+        return resetBtn;
     }
 
     private GridPane getBookInfoPanel() {
         Image defaultCover = new Image(Objects.requireNonNull(JebmanGUI.class.getClassLoader().getResourceAsStream("nocover.png")));
         ImageView cover = new ImageView();
-        cover.setCache(true);
         cover.setImage(defaultCover);
         cover.setPreserveRatio(true);
         cover.setFitWidth(300);
+        GridPane.setValignment(cover, VPos.TOP);
+        GridPane.setHalignment(cover, HPos.CENTER);
 
         Label isbnLbl = new Label("ISBN:");
         GridPane.setHalignment(isbnLbl, HPos.LEFT);
@@ -209,7 +224,7 @@ public class JebmanGUI extends Application {
                         datePublishedCol, dateAddedCol, dateModifiedCol, pathCol)));
 
 
-        setData(mc.readAllBooks());
+        setDataAll();
         table.setItems(data);
         table.getFocusModel().focus(1);
 
@@ -567,6 +582,10 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, String> pathCol = new TableColumn<>("Path");
         pathCol.setCellValueFactory(f -> new SimpleStringProperty(f.getValue().getBook().getPath()));
         return pathCol;
+    }
+
+    private void setDataAll() {
+        setData(mc.getBooks());
     }
 
     private void setData(ObservableList<BookAuthorView> bavs) {
