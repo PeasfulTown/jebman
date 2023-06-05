@@ -95,7 +95,7 @@ public class JebmanGUI extends Application {
         mainGrid.add(getTableResetButton(), 1, 1);
         mainGrid.add(getBookInfoPanel(), 0, 2);
         mainGrid.add(getBookTable(), 1, 2);
-        mainGrid.add(getTagList(), 2, 2);
+        mainGrid.add(getFilterList(), 2, 2);
         return mainGrid;
     }
 
@@ -110,7 +110,7 @@ public class JebmanGUI extends Application {
         return resetBtn;
     }
 
-    private ListView<String> getTagList() {
+    private TreeView<String> getFilterList() {
         Set<Tag> tags = null;
         try {
             tags = mc.readAllTags();
@@ -118,23 +118,75 @@ public class JebmanGUI extends Application {
             showPopupErrorWithExceptionStack(e);
         }
 
-        ObservableList<String> tagObservables = FXCollections.observableList(new ArrayList<>());
+        TreeItem<String> treeRoot = new TreeItem<>(" ");
+        treeRoot.setExpanded(true);
+
+        TreeItem<String> tagRoot = new TreeItem<>("Tags");
+        tagRoot.setExpanded(true);
+
         for (Tag t : tags) {
-            tagObservables.add(t.getName());
+            TreeItem<String> item = new TreeItem<>(t.getName());
+            tagRoot.getChildren().add(item);
         }
 
-        ListView<String> tagList = new ListView<>();
-        tagList.setItems(tagObservables);
-        tagList.getSelectionModel().selectedItemProperty().addListener(
-                (ObservableValue<? extends String> ov, String old_val, String new_val) -> {
-                    try {
-                        setData(mc.getBooksByTag(ov.getValue()));
-                    } catch (DAOException e) {
-                        showPopupErrorWithExceptionStack(e);
+        TreeItem<String> authorRoot = new TreeItem<>("Authors");
+
+        Set<Author> authors = null;
+
+        try {
+            authors = mc.getAuthors();
+        } catch (Exception e) {
+            showPopupErrorWithExceptionStack(e);
+        }
+
+        for (Author a : authors) {
+            TreeItem<String> item = new TreeItem<>(a.getName());
+            authorRoot.getChildren().add(item);
+        }
+
+        TreeItem<String> otherRoot = new TreeItem<>("Other");
+
+        for (int i = 0; i < 5; i++) {
+            TreeItem<String> item  = new TreeItem<>("item " + i);
+            otherRoot.getChildren().add(item);
+        }
+
+        treeRoot.getChildren().addAll(tagRoot, authorRoot, otherRoot);
+
+        TreeView<String> treeView = new TreeView<>(treeRoot);
+        treeView.setShowRoot(false);
+
+        treeView.getFocusModel().focusedItemProperty().addListener(
+                (ov, oldVal, newVal) -> {
+                    System.out.println(ov.getValue());
+                    String parentType = "";
+                    switch (ov.getValue().getParent().getValue()) {
+                        case "Tags":
+                            try {
+                                setData(mc.getBooksByTag(ov.getValue().getValue()));
+                            } catch (DAOException e) {
+                                showPopupErrorWithExceptionStack(e);
+                            }
+                            break;
+                        case "Authors":
+                            try {
+                                setData(mc.getBooksByAuthor(ov.getValue().getValue()));
+                            } catch (Exception e) {
+                                showPopupErrorWithExceptionStack(e);
+                            }
+                        case "Other":
+                            parentType = "other";
+                            break;
+                        default:
+                            parentType = "unknown";
+                            break;
                     }
+
+                    System.out.println("Parent type of selected Item is: " + parentType);
                 }
         );
-        return tagList;
+
+        return treeView;
     }
 
     private GridPane getBookInfoPanel() {

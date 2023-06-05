@@ -383,12 +383,31 @@ public class MainController {
         return this.bookSet;
     }
 
+    public Book getBookById(int id) {
+        for (Book b : this.getBooks()) {
+            if (b.getId() == id)
+                return b;
+        }
+
+        return null;
+    }
+
     public Book getBookByTitle(String title) {
         return this.bookSet.getByName(title);
     }
 
+    public Set<Book> getBooksByAuthor(String authorName) {
+        Set<Book> authorsBooks = new HashSet<>();
+        Author author = getAuthorByName(authorName);
+        for (BookAuthor ba : this.getBookAuthorLinksByAuthorId(author.getId())) {
+            authorsBooks.add(getBookById(ba.getBookId()));
+        }
+
+        return authorsBooks;
+    }
+
     public Set<Integer> readBookIdsByTagId(int id) throws DAOException {
-        return ((GenericJointTableDAO)this.bookTagDAO).readFirstColIdsBySecondColIds(id);
+        return ((GenericJointTableDAO) this.bookTagDAO).readFirstColIdsBySecondColIds(id);
     }
 
     public Set<Book> getBooksByTag(Tag tag) throws DAOException {
@@ -455,6 +474,16 @@ public class MainController {
 
     public Set<BookAuthor> getBookAuthorLinks() {
         return this.bookAuthorLinkSet;
+    }
+
+    public Set<BookAuthor> getBookAuthorLinksByAuthorId(int authorId) {
+        Set<BookAuthor> bookAuthorLinks = new LinkedHashSet<>();
+        for (BookAuthor ba : this.getBookAuthorLinks()) {
+            if (ba.getAuthorId() == authorId)
+                bookAuthorLinks.add(ba);
+        }
+
+        return bookAuthorLinks;
     }
 
     public Set<BookTag> getBookTagLinks() {
