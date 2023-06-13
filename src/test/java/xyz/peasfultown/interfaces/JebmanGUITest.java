@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.ApplicationDefaults;
 import xyz.peasfultown.MainController;
+import xyz.peasfultown.domain.Book;
+import xyz.peasfultown.domain.Series;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static xyz.peasfultown.TestHelpers.*;
@@ -34,6 +36,9 @@ class JebmanGUITest {
             mc.tagBook(3, "tbr");
             mc.tagBook(3, "something");
             mc.tagBook(4, "read");
+            Book updatedBook = mc.getBookById(1);
+            updatedBook.setSeries(new Series("Some Series"));
+            mc.updateBook(mc.getBookById(1));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             fail();

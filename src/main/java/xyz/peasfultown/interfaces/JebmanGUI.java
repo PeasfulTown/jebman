@@ -4,7 +4,6 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -47,6 +46,7 @@ public class JebmanGUI extends Application {
     private Stage stage;
     private final GridPane mainGrid = new GridPane();
     private final GridPane infoPanel = new GridPane();
+    private final TreeView<String> filterList = new TreeView<>();
     private final Font font = new Font("Arial", 20);
     private static MainController mc;
 
@@ -63,6 +63,9 @@ public class JebmanGUI extends Application {
         stage.setTitle("Jebman - Ebooks Manager");
         stage.setMinHeight(300);
         stage.setMinWidth(600);
+
+        configureFilterListTree();
+        setFilterListContent();
 
         GridPane layout = getLayout();
         Scene scene = new Scene(layout);
@@ -95,7 +98,8 @@ public class JebmanGUI extends Application {
         mainGrid.add(getTableResetButton(), 1, 1);
         mainGrid.add(getBookInfoPanel(), 0, 2);
         mainGrid.add(getBookTable(), 1, 2);
-        mainGrid.add(getFilterList(), 2, 2);
+        mainGrid.add(filterList, 2, 2);
+
         return mainGrid;
     }
 
@@ -110,83 +114,102 @@ public class JebmanGUI extends Application {
         return resetBtn;
     }
 
-    private TreeView<String> getFilterList() {
-        Set<Tag> tags = null;
-        try {
-            tags = mc.readAllTags();
-        } catch (Exception e) {
-            showPopupErrorWithExceptionStack(e);
-        }
+    private void setFilterListContent() {
+        TreeItem<String> filterListRoot = getFilterListRoot();
+        filterListRoot.getChildren().addAll(
+                getTagTree(),
+                getSeriesTree(),
+                getAuthorTree(),
+                getPublisherTree()
+        );
+        filterList.setRoot(filterListRoot);
+    }
 
-        TreeItem<String> treeRoot = new TreeItem<>(" ");
-        treeRoot.setExpanded(true);
-
-        TreeItem<String> tagRoot = new TreeItem<>("Tags");
-        tagRoot.setExpanded(true);
-
-        for (Tag t : tags) {
-            TreeItem<String> item = new TreeItem<>(t.getName());
-            tagRoot.getChildren().add(item);
-        }
-
-        TreeItem<String> authorRoot = new TreeItem<>("Authors");
-
-        Set<Author> authors = null;
-
-        try {
-            authors = mc.getAuthors();
-        } catch (Exception e) {
-            showPopupErrorWithExceptionStack(e);
-        }
-
-        for (Author a : authors) {
-            TreeItem<String> item = new TreeItem<>(a.getName());
-            authorRoot.getChildren().add(item);
-        }
-
-        TreeItem<String> otherRoot = new TreeItem<>("Other");
-
-        for (int i = 0; i < 5; i++) {
-            TreeItem<String> item  = new TreeItem<>("item " + i);
-            otherRoot.getChildren().add(item);
-        }
-
-        treeRoot.getChildren().addAll(tagRoot, authorRoot, otherRoot);
-
-        TreeView<String> treeView = new TreeView<>(treeRoot);
+    private void configureFilterListTree() {
+        TreeView<String> treeView = this.filterList;
         treeView.setShowRoot(false);
-
         treeView.getFocusModel().focusedItemProperty().addListener(
                 (ov, oldVal, newVal) -> {
                     System.out.println(ov.getValue());
                     String parentType = "";
-                    switch (ov.getValue().getParent().getValue()) {
-                        case "Tags":
-                            try {
-                                setData(mc.getBooksByTag(ov.getValue().getValue()));
-                            } catch (DAOException e) {
-                                showPopupErrorWithExceptionStack(e);
+                    try {
+                        if (ov.getValue() != null) {
+                            switch (ov.getValue().getParent().getValue()) {
+                                case "Tags":
+                                    setData(mc.getBooksByTag(ov.getValue().getValue()));
+                                    break;
+                                case "Series":
+                                    setData(mc.getBooksBySeries(ov.getValue().getValue()));
+                                    break;
+                                case "Authors":
+                                    setData(mc.getBooksByAuthor(ov.getValue().getValue()));
+                                    break;
+                                case "Publishers":
+                                    setData(mc.getBooksByPublisher(ov.getValue().getValue()));
+                                    break;
+                                default:
+                                    parentType = "unknown";
+                                    break;
                             }
-                            break;
-                        case "Authors":
-                            try {
-                                setData(mc.getBooksByAuthor(ov.getValue().getValue()));
-                            } catch (Exception e) {
-                                showPopupErrorWithExceptionStack(e);
-                            }
-                        case "Other":
-                            parentType = "other";
-                            break;
-                        default:
-                            parentType = "unknown";
-                            break;
+                        }
+                    } catch (Exception e) {
+                        showPopupErrorWithExceptionStack(e);
                     }
 
                     System.out.println("Parent type of selected Item is: " + parentType);
                 }
         );
+    }
 
-        return treeView;
+    private TreeItem<String> getFilterListRoot() {
+        TreeItem<String> treeRoot = new TreeItem<>(" ");
+        treeRoot.setExpanded(true);
+        return treeRoot;
+    }
+
+    private TreeItem<String> getTagTree() {
+        TreeItem<String> tagRoot = new TreeItem<>("Tags");
+        tagRoot.setExpanded(true);
+        Set<Tag> tags = mc.getTags();
+        for (Tag t : tags) {
+            TreeItem<String> item = new TreeItem<>(t.getName());
+            tagRoot.getChildren().add(item);
+        }
+
+        return tagRoot;
+    }
+
+    private TreeItem<String> getSeriesTree() {
+        TreeItem<String> seriesRoot = new TreeItem<>("Series");
+        seriesRoot.setExpanded(true);
+        Set<Series> series = mc.getSeries();
+        for (Series s : series) {
+            TreeItem<String> item = new TreeItem<>(s.getName());
+            seriesRoot.getChildren().add(item);
+        }
+        return seriesRoot;
+    }
+
+    private TreeItem<String> getAuthorTree() {
+        TreeItem<String> authorRoot = new TreeItem<>("Authors");
+        authorRoot.setExpanded(true);
+        Set<Author> authors = mc.getAuthors();
+        for (Author a : authors) {
+            TreeItem<String> item = new TreeItem<>(a.getName());
+            authorRoot.getChildren().add(item);
+        }
+        return authorRoot;
+    }
+
+    private TreeItem<String> getPublisherTree() {
+        TreeItem<String> publisherRoot = new TreeItem<>("Publishers");
+        publisherRoot.setExpanded(true);
+        Set<Publisher> publishers = mc.getPublishers();
+        for (Publisher p : publishers) {
+            TreeItem<String> item = new TreeItem<>(p.getName());
+            publisherRoot.getChildren().add(item);
+        }
+        return publisherRoot;
     }
 
     private GridPane getBookInfoPanel() {
@@ -509,6 +532,7 @@ public class JebmanGUI extends Application {
                         if (author == null) {
                             author = new Author(event.getNewValue());
                             mc.insertAuthor(author);
+                            setFilterListContent();
                         }
                         BookAuthorView bav = event.getRowValue();
                         bav.setAuthor(author);
@@ -546,6 +570,7 @@ public class JebmanGUI extends Application {
                             record = new Publisher();
                             record.setName(event.getNewValue());
                             mc.insertPublisher(record);
+                            setFilterListContent();
                         }
                         BookAuthorView bav = event.getRowValue();
                         bav.getBook().setPublisher(record);
@@ -581,6 +606,7 @@ public class JebmanGUI extends Application {
                         if (series == null) {
                             series = new Series(event.getNewValue());
                             mc.insertSeries(series);
+                            setFilterListContent();
                         }
                         BookAuthorView bav = event.getRowValue();
                         bav.getBook().setSeries(series);

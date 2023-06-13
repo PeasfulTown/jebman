@@ -156,6 +156,22 @@ public class MainController {
 
     public void updateBook(Book bookToUpdate) throws DAOException {
         bookToUpdate.setModifiedDate(Instant.now());
+        Series series = bookToUpdate.getSeries();
+        if (series != null) {
+            if (series.getId() == 0) {
+                this.seriesDAO.create(series);
+                this.seriesSet.add(series);
+            }
+        }
+
+        Publisher publisher = bookToUpdate.getPublisher();
+        if (publisher != null) {
+            if (publisher.getId() == 0) {
+                this.publisherDAO.create(publisher);
+                this.publisherSet.add(publisher);
+            }
+        }
+
         this.bookDAO.update(bookToUpdate);
         Book book = this.bookSet.stream().filter(b -> b.getId() == bookToUpdate.getId()).findFirst().get();
         this.bookSet.remove(book);
@@ -406,6 +422,19 @@ public class MainController {
         return authorsBooks;
     }
 
+    public Set<Book> getBooksByPublisher(String publisherName) {
+        Set<Book> publishersBooks = new HashSet<>();
+        Publisher publisher = getPublisherByName(publisherName);
+        for (Book b : bookSet) {
+            if (b.getPublisher() != null) {
+                if (b.getPublisher().equals(publisher)) {
+                    publishersBooks.add(b);
+                }
+            }
+        }
+        return publishersBooks;
+    }
+
     public Set<Integer> readBookIdsByTagId(int id) throws DAOException {
         return ((GenericJointTableDAO) this.bookTagDAO).readFirstColIdsBySecondColIds(id);
     }
@@ -431,6 +460,24 @@ public class MainController {
         return books;
     }
 
+    public Set<Book> getBooksBySeries(String seriesName) {
+        Series series = getSeriesByName(seriesName);
+        Set<Book> seriesBooks = new HashSet<>();
+        for (Book b : bookSet) {
+            if (b.getSeries() != null) {
+                if (b.getSeries().equals(series)) {
+                    seriesBooks.add(b);
+                }
+            }
+        }
+
+        return seriesBooks;
+    }
+
+    public Set<Tag> getTags() {
+        return this.tagSet;
+    }
+
     public Set<Tag> getTagsOfBook(Book book) throws DAOException {
         return getTagsOfBook(book.getId());
     }
@@ -446,6 +493,15 @@ public class MainController {
 
     public Set<Series> getSeries() {
         return this.seriesSet;
+    }
+
+    public Series getSeriesByName(String seriesName) {
+        for (Series s : seriesSet) {
+            if (s.getName().equals(seriesName)) {
+                return s;
+            }
+        }
+        return null;
     }
 
     public Set<Publisher> getPublishers() {
