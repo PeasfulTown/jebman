@@ -10,9 +10,18 @@ import javafx.scene.layout.GridPane;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.util.Optional;
 
 public class GUIHelpers {
     // Dialogs
+    public static boolean showPopupChoiceYesNo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
     public static void showPopupInfo(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.OK);
         alert.show();

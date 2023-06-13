@@ -45,6 +45,7 @@ import static xyz.peasfultown.interfaces.GUIHelpers.*;
 public class JebmanGUI extends Application {
     private Stage stage;
     private final GridPane mainGrid = new GridPane();
+    private final TableView<BookAuthorView> bookTable = new TableView<>();
     private final GridPane infoPanel = new GridPane();
     private final TreeView<String> filterList = new TreeView<>();
     private final Font font = new Font("Arial", 20);
@@ -66,6 +67,7 @@ public class JebmanGUI extends Application {
 
         configureFilterListTree();
         setFilterListContent();
+
 
         GridPane layout = getLayout();
         Scene scene = new Scene(layout);
@@ -298,8 +300,7 @@ public class JebmanGUI extends Application {
     }
 
     private TableView<BookAuthorView> getBookTable() {
-        TableView<BookAuthorView> table = new TableView<>();
-        table.setEditable(true);
+        this.bookTable.setEditable(true);
 
         TableColumn<BookAuthorView, Integer> bookIdCol = this.getBookIdColumn();
         TableColumn<BookAuthorView, String> bookTitleCol = this.getBookTitleColumn();
@@ -320,7 +321,7 @@ public class JebmanGUI extends Application {
 
         TableColumn<BookAuthorView, String> pathCol = this.getPathColumn();
 
-        table.getColumns().addAll(new ArrayList<>(
+        bookTable.getColumns().addAll(new ArrayList<>(
                 Arrays.asList(bookIdCol, bookTitleCol, authorIdCol, authorNameCol,
                         publisherIdCol, publisherNameCol,
                         seriesIdCol, seriesNameCol, seriesNumberCol,
@@ -328,10 +329,10 @@ public class JebmanGUI extends Application {
 
 
         setDataAll();
-        table.setItems(data);
-        table.getFocusModel().focus(1);
+        bookTable.setItems(data);
+        bookTable.getFocusModel().focus(1);
 
-        table.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
+        bookTable.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
 //            System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
 //            System.out.println("observable value null: " + (observableValue.getValue() == null));
 //            System.out.println("bookAuthorViewNew is null: " + ((bookAuthorViewNew) == null));
@@ -406,7 +407,7 @@ public class JebmanGUI extends Application {
             }
         });
 
-        return table;
+        return bookTable;
     }
 
     private Node getTableNodeByColAndRow(GridPane gridPane, int colInd, int rowInd) {
@@ -428,7 +429,7 @@ public class JebmanGUI extends Application {
 
         final FileChooser fileChooser = new FileChooser();
         final Button btnAddBook = new Button("Add Book");
-
+        btnAddBook.setStyle("-fx-background-color:#4cb639;");
         btnAddBook.setOnAction((final ActionEvent e) -> {
             configureFileChooser(fileChooser);
             File ebookFile = fileChooser.showOpenDialog(this.stage);
@@ -444,9 +445,29 @@ public class JebmanGUI extends Application {
                 }
             }
         });
-
         btnAddBook.setPrefSize(150, 50);
-        hbox.getChildren().add(btnAddBook);
+
+        final Button btnRemoveBook = new Button ("Remove Book");
+        btnRemoveBook.setPrefSize(150, 50);
+        btnRemoveBook.setStyle("-fx-background-color:#d94243;");
+        btnRemoveBook.setOnAction((final ActionEvent e) -> {
+            Book selectedBook = bookTable.getFocusModel().getFocusedItem().getBook();
+
+            boolean confirmed = showPopupChoiceYesNo("Are you sure?",
+                    "Are you sure you want to remove " + selectedBook.getTitle() +
+                            " from the library?");
+            if (confirmed) {
+                try {
+                    mc.removeBook(selectedBook);
+                    bookTable.getItems().remove(bookTable.getFocusModel().getFocusedCell().getRow());
+                    System.out.println("Removed book " + selectedBook.getTitle());
+                } catch (Exception ex) {
+                    showPopupErrorWithExceptionStack(ex);
+                }
+            }
+        });
+
+        hbox.getChildren().addAll(btnAddBook, btnRemoveBook);
 
         return hbox;
     }
