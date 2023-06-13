@@ -327,11 +327,11 @@ public class JebmanGUI extends Application {
                         seriesIdCol, seriesNameCol, seriesNumberCol,
                         datePublishedCol, dateAddedCol, dateModifiedCol, pathCol)));
 
-
         setDataAll();
         bookTable.setItems(data);
+        bookIdCol.setSortType(TableColumn.SortType.ASCENDING);
+        bookTable.getSortOrder().add(bookIdCol);
         bookTable.getFocusModel().focus(1);
-
         bookTable.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
 //            System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
 //            System.out.println("observable value null: " + (observableValue.getValue() == null));
