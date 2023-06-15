@@ -1,9 +1,7 @@
 package xyz.peasfultown.interfaces;
 
 import javafx.application.Application;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -38,6 +36,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static xyz.peasfultown.interfaces.GUIHelpers.*;
 
@@ -305,6 +304,8 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, Integer> bookIdCol = this.getBookIdColumn();
         TableColumn<BookAuthorView, String> bookTitleCol = this.getBookTitleColumn();
 
+        TableColumn<BookAuthorView, Set<Tag>> bookTagsCol = this.getTagsColumn();
+
         TableColumn<BookAuthorView, Integer> authorIdCol = this.getAuthorIdColumn();
         TableColumn<BookAuthorView, String> authorNameCol = this.getAuthorNameColumn();
 
@@ -322,7 +323,7 @@ public class JebmanGUI extends Application {
         TableColumn<BookAuthorView, String> pathCol = this.getPathColumn();
 
         bookTable.getColumns().addAll(new ArrayList<>(
-                Arrays.asList(bookIdCol, bookTitleCol, authorIdCol, authorNameCol,
+                Arrays.asList(bookIdCol, bookTitleCol, bookTagsCol, authorIdCol, authorNameCol,
                         publisherIdCol, publisherNameCol,
                         seriesIdCol, seriesNameCol, seriesNumberCol,
                         datePublishedCol, dateAddedCol, dateModifiedCol, pathCol)));
@@ -331,7 +332,7 @@ public class JebmanGUI extends Application {
         bookTable.setItems(data);
         bookIdCol.setSortType(TableColumn.SortType.ASCENDING);
         bookTable.getSortOrder().add(bookIdCol);
-        bookTable.getFocusModel().focus(1);
+        bookTable.getFocusModel().focus(0);
         bookTable.getFocusModel().focusedItemProperty().addListener((observableValue, bookAuthorViewOld, bookAuthorViewNew) -> {
 //            System.out.println("focus changed to: " + table.getFocusModel().getFocusedCell());
 //            System.out.println("observable value null: " + (observableValue.getValue() == null));
@@ -533,6 +534,16 @@ public class JebmanGUI extends Application {
                     }
                 });
         return bookTitleCol;
+    }
+
+    private TableColumn<BookAuthorView, Set<Tag>> getTagsColumn() {
+        TableColumn<BookAuthorView, Set<Tag>> tagsCol = new TableColumn<>("Tags");
+        Callback<TableColumn<BookAuthorView, Set<Tag>>, TableCell<BookAuthorView, Set<Tag>>> cellFactory
+                = (TableColumn<BookAuthorView, Set<Tag>> param) -> new TagPickerCell(mc.getTags());
+        tagsCol.setCellValueFactory(f -> new SimpleObjectProperty<Set<Tag>>(f.getValue().getTags().stream().collect(Collectors.toSet())) {
+        });
+        tagsCol.setCellFactory(cellFactory);
+        return tagsCol;
     }
 
     private TableColumn<BookAuthorView, Integer> getAuthorIdColumn() {
