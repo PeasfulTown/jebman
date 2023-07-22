@@ -40,7 +40,7 @@ Supported ebook formats: .epub, .mobi, .pdf
 
 - [ ] Allow to edit metadata
 
-- [ ] Get metadata from online (using ISBN or title if ISBN isn't available)
+- [ ] Get metadata from online 
 
 - [ ] Google Drive backup 
 
