@@ -354,6 +354,16 @@ public class MainController {
         this.bookTagLinkSet.add(bt);
     }
 
+    public void removeBookTagLink(int bookId, int tagId) throws DAOException {
+        for (BookTag bt : this.bookTagLinkSet) {
+            if (bt.getTagId() == tagId && bt.getBookId() == bookId) {
+                this.bookTagLinkSet.remove(bt);
+                this.bookTagDAO.delete(bt.getId());
+                break;
+            }
+        }
+    }
+
     private Author createAuthorFromName(String name) throws DAOException {
         Author author = authorSet.getByName(name);
         if (author == null) {
@@ -378,20 +388,15 @@ public class MainController {
     }
 
     private void createThumbnail(File file, Path targetLocation, String fileType) throws ThumbnailGeneratorException {
-        try {
-            switch (fileType.toLowerCase()) {
-                case "pdf":
-                    ThumbnailGenerator.generatePDFThumbnail(file, targetLocation);
-                    break;
-                case "epub":
-                    ThumbnailGenerator.generateEpubThumbnail(file, targetLocation);
-                    break;
-                default:
-                    throw new ThumbnailGeneratorException(String.format("Error while trying to generate thumbnail for %s%n", file.getName()));
-            }
-
-        } catch (ThumbnailGeneratorException e) {
-            throw e;
+        switch (fileType.toLowerCase()) {
+            case "pdf":
+                ThumbnailGenerator.generatePDFThumbnail(file, targetLocation);
+                break;
+            case "epub":
+                ThumbnailGenerator.generateEpubThumbnail(file, targetLocation);
+                break;
+            default:
+                throw new ThumbnailGeneratorException(String.format("Error while trying to generate thumbnail for %s%n", file.getName()));
         }
     }
 

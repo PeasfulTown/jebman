@@ -25,6 +25,7 @@ import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.controlsfx.control.CheckComboBox;
 import xyz.peasfultown.ApplicationConfig;
 import xyz.peasfultown.MainController;
 import xyz.peasfultown.dao.DAOException;
@@ -539,10 +540,17 @@ public class JebmanGUI extends Application {
     private TableColumn<BookAuthorView, Set<Tag>> getTagsColumn() {
         TableColumn<BookAuthorView, Set<Tag>> tagsCol = new TableColumn<>("Tags");
         Callback<TableColumn<BookAuthorView, Set<Tag>>, TableCell<BookAuthorView, Set<Tag>>> cellFactory
-                = (TableColumn<BookAuthorView, Set<Tag>> param) -> new TagPickerCell(mc.getTags());
+                = (TableColumn<BookAuthorView, Set<Tag>> param) -> new TagCheckComboBoxTableCell(mc);
         tagsCol.setCellValueFactory(f -> new SimpleObjectProperty<Set<Tag>>(f.getValue().getTags().stream().collect(Collectors.toSet())) {
         });
         tagsCol.setCellFactory(cellFactory);
+        tagsCol.setOnEditCommit((TableColumn.CellEditEvent<BookAuthorView, Set<Tag>> event) -> {
+            StringJoiner sj = new StringJoiner(",");
+            for (Tag t : event.getNewValue()) {
+                sj.add(t.getName());
+            }
+            System.out.println("New tags: " + sj);
+        });
         return tagsCol;
     }
 

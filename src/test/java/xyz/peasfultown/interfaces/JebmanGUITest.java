@@ -45,6 +45,7 @@ class JebmanGUITest {
         }
 
         try {
+
             JebmanGUI.run(mc);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
