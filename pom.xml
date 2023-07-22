@@ -38,6 +38,14 @@
 
   <dependencies>
 
+    <!-- local dependencies -->
+    <dependency>
+      <groupId>org.im4java</groupId>
+      <artifactId>im4java</artifactId>
+      <version>1.4.0-1.5</version>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -123,6 +131,12 @@
       <version>11.0.2</version>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/org.controlsfx/controlsfx -->
+    <dependency>
+      <groupId>org.controlsfx</groupId>
+      <artifactId>controlsfx</artifactId>
+      <version>11.1.2</version>
+    </dependency>
   </dependencies>
 
   <build>
