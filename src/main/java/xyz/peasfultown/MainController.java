@@ -214,6 +214,16 @@ public class MainController {
         this.addBookTagLink(bookId, tag.getId());
     }
 
+    public void untagBook(int bookId, int tagId) throws DAOException {
+        Tag tag = this.getTagById(tagId);
+
+        if (tag == null) {
+            throw new DAOException("No tag record with matching ID.");
+        }
+
+        this.removeBookTagLink(bookId, tagId);
+    }
+
     public Set<Publisher> readAllPublishers() throws DAOException {
         return publisherDAO.readAll();
     }

@@ -4,73 +4,96 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.control.TableCell;
 import org.controlsfx.control.CheckComboBox;
 import xyz.peasfultown.MainController;
+import xyz.peasfultown.dao.DAOException;
 import xyz.peasfultown.domain.Tag;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.StringJoiner;
+import javax.swing.event.ChangeListener;
+import java.util.*;
 
 public class TagCheckComboBoxTableCell extends TableCell<BookAuthorView, Set<Tag>> {
-    private CheckComboBox<String> tagSelection;
+    private CheckComboBox<String> tagSelector;
     private MainController mc;
+    private final Set<Tag> selectedTags;
     private final Set<Tag> allTags;
+
     public TagCheckComboBoxTableCell(MainController mc) {
         this.mc = mc;
+        this.selectedTags = new LinkedHashSet<>();
         this.allTags = mc.getTags();
+
     }
 
     @Override
     public void startEdit() {
-        if (!isEmpty()) {
-            super.startEdit();
-            createCheckComboBox();
-            setText(null);
-            setGraphic(this.tagSelection);
-        }
+        super.startEdit();
+        setFocused(false);
+        createCheckComboBox();
+        setText(null);
+        setGraphic(this.tagSelector);
     }
 
     @Override
     public void cancelEdit() {
-        super.cancelEdit();
-
-        setText(getTagsAsCommaDelimitedString(getItem()));
+        setText(getTagsAsCommaDelimitedString(selectedTags));
         setGraphic(null);
+    }
+
+    @Override
+    public void commitEdit(Set<Tag> tags) {
+        super.commitEdit(tags);
+        setFocused(false);
     }
 
     @Override
     protected void updateItem(Set<Tag> tags, boolean empty) {
         super.updateItem(tags, empty);
 
-         if (empty) {
-             setText(null);
-             setGraphic(null);
-         } else {
-             if (isEditing()) {
-                 setText(null);
-                 setGraphic(tagSelection);
-             } else {
-                 setText(getTagsAsCommaDelimitedString(getItem()));
-                 setGraphic(null);
-             }
-         }
+        if (empty) {
+            setText(null);
+            setGraphic(null);
+        } else {
+            if (isEditing()) {
+                setText(null);
+                setGraphic(tagSelector);
+            } else {
+                fetchSelectedTags();
+                setText(getTagsAsCommaDelimitedString(selectedTags));
+                setGraphic(null);
+            }
+        }
     }
 
     private void createCheckComboBox() {
-        this.tagSelection = new CheckComboBox<>();
-        this.tagSelection.getItems().addAll(getTagsAsListOfStrings(this.allTags));
-        for (String item : tagSelection.getItems()) {
-            if (getTagsAsListOfStrings(getItem()).contains(item)) {
-                tagSelection.getCheckModel().check(item);
+        this.tagSelector = new CheckComboBox<>();
+        this.tagSelector.getItems().addAll(getTagsAsListOfStrings(this.allTags));
+        for (String item : tagSelector.getItems()) {
+            if (getTagsAsListOfStrings(selectedTags).contains(item)) {
+                tagSelector.getCheckModel().check(item);
             }
         }
-        this.tagSelection.getCheckModel().getCheckedItems().addListener(new ListChangeListener<String>() {
+
+        this.tagSelector.getCheckModel().getCheckedItems().addListener(new ListChangeListener<String>() {
             public void onChanged(ListChangeListener.Change<? extends String> c) {
-                while(c.next()) {
+                while (c.next()) {
                     // do something with changes here
-                    System.out.println("while changed: " + c);
+//                    System.out.println("while: changed: " + c);
+                    if (c.wasAdded()) {
+                        try {
+                            System.out.println("tag " + c.getAddedSubList().get(0) + " added");
+                            mc.tagBook(getTableRow().getItem().getBook().getId(), getTagByName(c.getAddedSubList().get(0), (AbstractCollection<Tag>) allTags).getId());
+                            selectedTags.add(getTagByName(c.getAddedSubList().get(0), (AbstractCollection<Tag>) allTags));
+                        } catch (DAOException e) {
+                            System.err.println("Exception while tagging book: " + e.getMessage());
+                        }
+                    } else {
+                        try {
+                            System.out.println("tag " + c.getRemoved().get(0) + " removed");
+                            mc.untagBook(getTableRow().getItem().getBook().getId(), getTagByName(c.getRemoved().get(0), (AbstractCollection<Tag>) allTags).getId());
+                        } catch (DAOException e) {
+                            System.err.println("Exception while tagging book: " + e.getMessage());
+                        }
+                    }
                 }
-                System.out.println("tag selector on changed after while: " + tagSelection.getCheckModel().getCheckedItems());
             }
         });
     }
@@ -90,5 +113,22 @@ public class TagCheckComboBoxTableCell extends TableCell<BookAuthorView, Set<Tag
             tagStr.add(t.getName());
         }
         return tagStr;
+    }
+
+    private Tag getTagByName(String tagName, AbstractCollection<Tag> source) {
+        for (Tag t : source) {
+            if (t.getName().equalsIgnoreCase(tagName)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    private void fetchSelectedTags() {
+        if (getItem() != null) {
+            this.selectedTags.clear();
+            this.selectedTags.addAll(getItem());
+            System.out.println("selected tags assigned");
+        }
     }
 }

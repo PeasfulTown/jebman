@@ -449,7 +449,7 @@ public class JebmanGUI extends Application {
         });
         btnAddBook.setPrefSize(150, 50);
 
-        final Button btnRemoveBook = new Button ("Remove Book");
+        final Button btnRemoveBook = new Button("Remove Book");
         btnRemoveBook.setPrefSize(150, 50);
         btnRemoveBook.setStyle("-fx-background-color:#d94243;");
         btnRemoveBook.setOnAction((final ActionEvent e) -> {
@@ -543,14 +543,11 @@ public class JebmanGUI extends Application {
                 = (TableColumn<BookAuthorView, Set<Tag>> param) -> new TagCheckComboBoxTableCell(mc);
         tagsCol.setCellValueFactory(f -> new SimpleObjectProperty<Set<Tag>>(f.getValue().getTags().stream().collect(Collectors.toSet())) {
         });
-        tagsCol.setCellFactory(cellFactory);
-        tagsCol.setOnEditCommit((TableColumn.CellEditEvent<BookAuthorView, Set<Tag>> event) -> {
-            StringJoiner sj = new StringJoiner(",");
-            for (Tag t : event.getNewValue()) {
-                sj.add(t.getName());
-            }
-            System.out.println("New tags: " + sj);
+        tagsCol.setOnEditCommit((TableColumn.CellEditEvent<BookAuthorView, Set<Tag>> e) -> {
+            //System.out.println("edit commit old val: " + e.getOldValue());
+            System.out.println("edit commit new val: " + e.getNewValue());
         });
+        tagsCol.setCellFactory(cellFactory);
         return tagsCol;
     }
 
